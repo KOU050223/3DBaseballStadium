@@ -35,5 +35,5 @@ jobs:
       # - name: Run tests
       #   run: npm test
 
-      - name: Check TypeScript compilation
+      - name: Run build
         run: npm run build
