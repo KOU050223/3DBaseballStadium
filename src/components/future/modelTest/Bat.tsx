@@ -4,7 +4,7 @@ import { useRef, Suspense, useState, useEffect } from 'react';
 import { Group } from 'three';
 import { FBXModel } from '@/components/common/FBXModel';
 import { FallbackBat } from '@/components/future/modelTest/FallbackBat';
-import type { DebugInfo } from '@/components/common/DebugPanel';
+import type { DebugInfo } from '@/types/debug';
 import { ModelConfig } from '@/types/modelConfig';
 
 export interface BatProps extends ModelConfig {
