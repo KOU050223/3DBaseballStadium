@@ -28,11 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="text-red-500 text-center p-4">
-          3Dモデルの読み込みに失敗しました
-        </div>
-      );
+      return this.props.fallback || null;
     }
 
     return this.props.children;

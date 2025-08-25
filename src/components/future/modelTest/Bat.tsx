@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, Suspense, useState, useEffect } from 'react';
-import { Group } from 'three';
+import { Group, Vector3, Euler } from 'three';
 import { FBXModel } from '@/components/common/FBXModel';
 import { FallbackBat } from '@/components/future/modelTest/FallbackBat';
 import type { DebugInfo } from '@/types/debug';
@@ -14,10 +14,10 @@ export interface BatProps extends ModelConfig {
 }
 
 export const Bat: React.FC<BatProps> = ({
-  position,
-  rotation,
+  position = new Vector3(0, 0, 0),
+  rotation = new Euler(0, 0, 0),
   scale = 1,
-  modelPath,
+  modelPath = "/models/bat/IronBat.fbx",
   visible = true,
   onLoad,
   onError,
@@ -43,7 +43,6 @@ export const Bat: React.FC<BatProps> = ({
     const timer = setTimeout(() => {
       if (!fbxLoaded && !fbxError) {
         setLoadingTimeout(true);
-        console.log('FBX loading timeout - showing fallback bat');
       }
     }, 5000);
 
@@ -51,38 +50,27 @@ export const Bat: React.FC<BatProps> = ({
   }, [fbxLoaded, fbxError]);
 
   const handleLoad = () => {
-    console.log('Bat: handleLoad called, setting fbxLoaded to true');
     setFbxLoaded(true);
     onLoad?.();
-    console.log('FBX bat loaded successfully');
   };
 
   const handleError = (error: Error) => {
-    console.log('Bat: handleError called, setting fbxError to true');
     setFbxError(true);
     onError?.(error);
-    console.error('FBX loading error, showing fallback:', error);
   };
 
   // 表示するコンテンツを決定
   const renderContent = () => {
-    console.log('Bat: renderContent called - fbxLoaded:', fbxLoaded, 'fbxError:', fbxError, 'loadingTimeout:', loadingTimeout);
-    
     // エラーまたはタイムアウトの場合はフォールバック表示
     if (fbxError || loadingTimeout) {
-      console.log('Showing fallback bat due to error or timeout');
       return <FallbackBat color="#8B4513" />;
     }
     
     // 通常の読み込み試行
-    console.log('Showing FBXModel with Suspense');
     return (
       <Suspense fallback={<FallbackBat color="#666666" />}>
           <FBXModel 
             modelPath={modelPath}
-            scale={[1, 1, 1]}
-            position={[0, 0, 0]}
-            rotation={[0, 0, 0]}
             onLoad={handleLoad}
             onError={handleError}
           />
@@ -93,9 +81,9 @@ export const Bat: React.FC<BatProps> = ({
   return (
     <group 
       ref={groupRef}
-      position={position}
-      rotation={rotation}
-      scale={scale}
+      position={[position.x, position.y, position.z]}
+      rotation={[rotation.x, rotation.y, rotation.z]}
+      scale={[scale, scale, scale]}
       visible={visible}
     >
       {renderContent()}
