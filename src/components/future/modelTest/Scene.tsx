@@ -36,7 +36,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               position={stadiumPosition}
               rotation={stadiumRotation}
               scale={stadiumScale}
-              modelPath="/models/baseball_stadium.glb"
+              modelPath="/models/BaseballStadium.glb"
               onLoad={() => console.log('Stadium loaded in integrated scene')}
             />
             <Bat 

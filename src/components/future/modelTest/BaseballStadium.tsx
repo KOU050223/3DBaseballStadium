@@ -16,7 +16,7 @@ const BaseballStadium: React.FC<BaseballStadiumProps> = ({
   position = new Vector3(0, -10, 0),
   rotation = new Euler(0, 0, 0),
   scale = 1,
-  modelPath = "/models/baseball_stadium.glb",
+  modelPath = "/models/BaseballStadium.glb",
   visible = true,
   onLoad,
   onError,
