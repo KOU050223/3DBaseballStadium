@@ -3,7 +3,7 @@
 import { useRef, Suspense, useState, useEffect } from 'react';
 import { Group, Vector3, Euler } from 'three';
 import { FBXModel } from '@/components/common/FBXModel';
-import { FallbackBat } from '@/components/future/modelTest/FallbackBat';
+import { FallbackBat } from '@/components/common/3DComponent/FallbackBat';
 import type { DebugInfo } from '@/types/debug';
 import { ModelConfig } from '@/types/modelConfig';
 

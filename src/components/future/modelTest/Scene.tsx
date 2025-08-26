@@ -4,9 +4,9 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Suspense, useState } from 'react';
 import { Vector3, Euler } from 'three';
-import { ErrorBoundary } from '@/components/future/modelTest/ErrorBoundary';
-import BaseballStadium from '@/components/future/modelTest/BaseballStadium';
-import { Bat } from '@/components/future/modelTest/Bat';
+import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
+import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
+import { Bat } from '@/components/common/3DComponent/Bat';
 
 interface SceneProps {
   debugMode?: boolean;
