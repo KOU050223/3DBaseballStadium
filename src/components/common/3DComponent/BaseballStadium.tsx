@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import { Vector3, Euler } from 'three';
 import { GLBModel } from '@/components/common/GLBModel';
-import { ErrorBoundary } from '@/components/future/modelTest/ErrorBoundary';
+import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import { ModelConfig } from '@/types/modelConfig';
 
 export interface BaseballStadiumProps extends ModelConfig {

@@ -1,9 +1,9 @@
-import { Scene } from '@/components/future/modelTest/Scene';
+// Home画面
 
 export default function Home() {
   return (
     <div className="w-full h-[calc(100vh-80px)]">
-      <Scene debugMode={process.env.NODE_ENV === 'development'} />
+      <h1>HomePage</h1>
     </div>
   );
 }
