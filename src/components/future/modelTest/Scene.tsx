@@ -2,11 +2,12 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController } from '@/components/common/3DComponent/BatController';
+import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -40,7 +41,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               rotation={stadiumRotation}
               scale={stadiumScale}
               modelPath="/models/BaseballStadium.glb"
-              onLoad={() => console.log('Stadium loaded in integrated scene')}
+              onLoad={() => console.log('Stadium loaded')}
             />
             <BatController
               position={batPosition}
@@ -48,7 +49,17 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               startRotation={startRotation}
               endRotation={endRotation}
               modelPath="/models/bat/IronBat.fbx"
-              onLoad={() => console.log('Bat loaded in integrated scene')}
+              onLoad={() => console.log('Bat loaded')}
+            />
+            
+            {/* バッティングマシーンとボール */}
+            <BattingMachine
+              position={new Vector3(0, 2, -8)}
+              launchInterval={3.0}
+              ballSpeed={12}
+              launchAngle={-5}
+              autoStart={true}
+              debugMode={debugMode}
             />
           </Suspense>
         </ErrorBoundary>
