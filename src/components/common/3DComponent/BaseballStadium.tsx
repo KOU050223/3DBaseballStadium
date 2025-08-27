@@ -5,6 +5,7 @@ import { Vector3, Euler } from 'three';
 import { GLBModel } from '@/components/common/GLBModel';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import { ModelConfig } from '@/types/modelConfig';
+import { MODEL_CONFIG } from '@/constants/ModelPosition';
 
 export interface BaseballStadiumProps extends ModelConfig {
   onLoad?: () => void;
@@ -13,9 +14,9 @@ export interface BaseballStadiumProps extends ModelConfig {
 }
 
 const BaseballStadium: React.FC<BaseballStadiumProps> = ({
-  position = new Vector3(0, -10, 0),
-  rotation = new Euler(0, 0, 0),
-  scale = 1,
+  position = MODEL_CONFIG.STADIUM.position,
+  rotation = MODEL_CONFIG.STADIUM.rotation,
+  scale = MODEL_CONFIG.STADIUM.scale,
   modelPath = "/models/BaseballStadium.glb",
   visible = true,
   onLoad,
