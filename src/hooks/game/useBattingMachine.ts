@@ -1,13 +1,14 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { Vector3 } from 'three';
+import { Vector3, Euler } from 'three';
 import { BallLauncher, LauncherConfig, IBallSpawner } from '@/services/baseball/BallLauncher';
 import { BallPhysics } from '@/services/physics/BallPhysics';
 import { BallProps } from '@/types/game/ball';
 
 export interface BattingMachineConfig {
     position?: Vector3;
+    rotation?: Euler;
     launchInterval?: number;
     ballSpeed?: number;
     launchAngle?: number;
@@ -17,14 +18,19 @@ export interface BattingMachineConfig {
 // IBallSpawnerの実装
 class BattingMachineSpawner implements IBallSpawner {
     constructor(
-        private setBalls: React.Dispatch<React.SetStateAction<Map<string, BallProps>>>
+        private setBalls: React.Dispatch<React.SetStateAction<Map<string, BallProps>>>,
+        private rotation: Euler
     ) { }
 
     spawnBall(id: string, position: Vector3, velocity: Vector3): void {
+        // 回転を考慮した速度ベクトルを計算
+        const rotatedVelocity = velocity.clone();
+        rotatedVelocity.applyEuler(this.rotation);
+
         const ballProps: BallProps = {
             id,
             initialPosition: position.clone(),
-            velocity: velocity.clone(),
+            velocity: rotatedVelocity,
             onRemove: (ballId: string) => {
                 this.setBalls(prev => {
                     const newBalls = new Map(prev);
@@ -44,6 +50,7 @@ class BattingMachineSpawner implements IBallSpawner {
 
 export const useBattingMachine = ({
     position = new Vector3(0, 2, -5),
+    rotation = new Euler(0, 0, 0),
     launchInterval = 2.0,
     ballSpeed = 15,
     launchAngle = -10,
@@ -53,7 +60,7 @@ export const useBattingMachine = ({
     const launcherRef = useRef<BallLauncher | null>(null);
 
     useEffect(() => {
-        const spawner = new BattingMachineSpawner(setBalls);
+        const spawner = new BattingMachineSpawner(setBalls, rotation);
 
         const launcherConfig: LauncherConfig = {
             position: position.clone(),
@@ -72,7 +79,7 @@ export const useBattingMachine = ({
         return () => {
             launcherRef.current = null;
         };
-    }, [position, launchInterval, ballSpeed, launchAngle, autoStart]);
+    }, [position, rotation, launchInterval, ballSpeed, launchAngle, autoStart]);
 
     const controls = {
         start: () => launcherRef.current?.start(),

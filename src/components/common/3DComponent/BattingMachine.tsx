@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3 } from 'three';
+import { Vector3, Euler } from 'three';
 import { Ball } from './Ball';
 import { useBattingMachine } from '@/hooks/game/useBattingMachine';
 
 export interface BattingMachineProps {
   position?: Vector3;
+  rotation?: Euler;
   launchInterval?: number;
   ballSpeed?: number;
   launchAngle?: number;
@@ -17,6 +18,7 @@ export interface BattingMachineProps {
 
 export const BattingMachine: React.FC<BattingMachineProps> = ({
   position = new Vector3(0, 2, -5),
+  rotation = new Euler(0, 0, 0),
   launchInterval = 2.0,
   ballSpeed = 15,
   launchAngle = -10,
@@ -25,6 +27,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
 }) => {
   const { balls, controls } = useBattingMachine({
     position,
+    rotation,
     launchInterval,
     ballSpeed,
     launchAngle,
@@ -41,7 +44,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
   return (
     <>
       {/* バッティングマシーン本体の表示 */}
-      <group position={position}>
+      <group position={position} rotation={rotation}>
         <mesh>
           <boxGeometry args={[0.5, 0.3, 0.8]} />
           <meshStandardMaterial color="#333333" />
