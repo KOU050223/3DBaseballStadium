@@ -72,38 +72,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           <div className="flex justify-between items-center mb-2">
             <span className="font-bold">統合シーンデバッグ</span>
           </div>
-          
-          <div className="mb-4">
-            <div className="text-yellow-300 mb-2 font-semibold">スタジアム</div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Scale</div>
-              <input
-                type="range" min="0.1" max="3" step="0.1" value={stadiumScale}
-                onChange={(e) => setStadiumScale(+e.target.value)}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{stadiumScale.toFixed(1)}</div>
-            </div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Position Y</div>
-              <input
-                type="range" min="-20" max="5" step="0.5" value={stadiumPosition.y}
-                onChange={(e) => setStadiumPosition(new Vector3(stadiumPosition.x, +e.target.value, stadiumPosition.z))}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{stadiumPosition.y.toFixed(1)}</div>
-            </div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Rotation Y</div>
-              <input
-                type="range" min="0" max={Math.PI * 2} step="0.1" value={stadiumRotation.y}
-                onChange={(e) => setStadiumRotation(new Euler(stadiumRotation.x, +e.target.value, stadiumRotation.z))}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{Math.round(stadiumRotation.y * 180 / Math.PI)}°</div>
-            </div>
-          </div>
-
           <div className="mb-4">
             <div className="text-blue-300 mb-2 font-semibold">バット</div>
             <div className="mb-2">
@@ -116,13 +84,31 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               <div className="text-xs text-gray-400">{batScale.toFixed(1)}</div>
             </div>
             <div className="mb-2">
-              <div className="text-gray-300 mb-1">Position Y</div>
+              <div className="text-gray-300 mb-1">Position X (左右)</div>
+              <input
+                type="range" min="-5" max="5" step="0.1" value={batPosition.x}
+                onChange={(e) => setBatPosition(new Vector3(+e.target.value, batPosition.y, batPosition.z))}
+                className="w-full h-1"
+              />
+              <div className="text-xs text-gray-400">{batPosition.x.toFixed(1)}</div>
+            </div>
+            <div className="mb-2">
+              <div className="text-gray-300 mb-1">Position Y (上下)</div>
               <input
                 type="range" min="-5" max="10" step="0.1" value={batPosition.y}
                 onChange={(e) => setBatPosition(new Vector3(batPosition.x, +e.target.value, batPosition.z))}
                 className="w-full h-1"
               />
               <div className="text-xs text-gray-400">{batPosition.y.toFixed(1)}</div>
+            </div>
+            <div className="mb-2">
+              <div className="text-gray-300 mb-1">Position Z (前後)</div>
+              <input
+                type="range" min="-5" max="5" step="0.1" value={batPosition.z}
+                onChange={(e) => setBatPosition(new Vector3(batPosition.x, batPosition.y, +e.target.value))}
+                className="w-full h-1"
+              />
+              <div className="text-xs text-gray-400">{batPosition.z.toFixed(1)}</div>
             </div>
           </div>
         </div>
