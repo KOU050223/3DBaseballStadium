@@ -7,18 +7,19 @@ import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController } from '@/components/common/3DComponent/BatController';
+import { MODEL_CONFIG } from '@/constants/ModelPosition';
 
 interface SceneProps {
   debugMode?: boolean;
 }
 
 export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
-  const [stadiumScale, setStadiumScale] = useState<number>(1);
-  const [stadiumPosition, setStadiumPosition] = useState<Vector3>(new Vector3(0, -10, 0));
-  const [stadiumRotation, setStadiumRotation] = useState<Euler>(new Euler(0, 0, 0));
-  
-  const [batScale, setBatScale] = useState<number>(1);
-  const [batPosition, setBatPosition] = useState<Vector3>(new Vector3(0, 0, 0));
+  const [stadiumScale, setStadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
+  const [stadiumPosition, setStadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
+  const [stadiumRotation, setStadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
+
+  const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
+  const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
