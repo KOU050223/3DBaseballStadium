@@ -2,11 +2,11 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
-import { Bat } from '@/components/common/3DComponent/Bat';
+import { BatController } from '@/components/common/3DComponent/BatController';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -19,7 +19,10 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   
   const [batScale, setBatScale] = useState<number>(1);
   const [batPosition, setBatPosition] = useState<Vector3>(new Vector3(0, 0, 0));
-  const [batRotation, setBatRotation] = useState<Euler>(new Euler(0, 0, 0));
+
+  // Define start and end rotations for the bat swing
+  const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
+  const endRotation = new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180);
 
   return (
     <div className="w-full h-full relative">
@@ -39,10 +42,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               modelPath="/models/BaseballStadium.glb"
               onLoad={() => console.log('Stadium loaded in integrated scene')}
             />
-            <Bat 
+            <BatController
               position={batPosition}
-              rotation={batRotation}
               scale={batScale}
+              startRotation={startRotation}
+              endRotation={endRotation}
               modelPath="/models/bat/IronBat.fbx"
               onLoad={() => console.log('Bat loaded in integrated scene')}
             />
@@ -106,15 +110,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 className="w-full h-1"
               />
               <div className="text-xs text-gray-400">{batPosition.y.toFixed(1)}</div>
-            </div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Rotation Y</div>
-              <input
-                type="range" min="0" max={Math.PI * 2} step="0.1" value={batRotation.y}
-                onChange={(e) => setBatRotation(new Euler(batRotation.x, +e.target.value, batRotation.z))}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{Math.round(batRotation.y * 180 / Math.PI)}°</div>
             </div>
           </div>
         </div>
