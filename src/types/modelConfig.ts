@@ -8,3 +8,16 @@ export interface ModelConfig {
   visible?: boolean;
   debugMode?: boolean;
 }
+
+// モデル設定の型定義
+export interface ModelTransform {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface ModelConfiguration {
+  position: ModelTransform;
+  rotation: ModelTransform;
+  scale: number;
+}
