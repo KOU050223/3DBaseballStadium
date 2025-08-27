@@ -11,7 +11,7 @@ export const Ball: React.FC<BallProps> = ({
   velocity,
   onRemove,
   color = '#ffffff',
-  radius = 0.037
+  radius = 0.05
 }) => {
   const meshRef = useRef<Mesh>(null);
   const positionRef = useRef<Vector3>(initialPosition.clone());
@@ -24,7 +24,7 @@ export const Ball: React.FC<BallProps> = ({
     meshRef.current.position.copy(positionRef.current);
 
     // ボールが一定範囲を超えたら削除
-    if (positionRef.current.z > 10 || 
+    if (positionRef.current.z < -30 || 
         positionRef.current.y < -5 || 
         Math.abs(positionRef.current.x) > 20) {
       onRemove(id);

@@ -55,11 +55,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             
             {/* バッティングマシーンとボール */}
             <BattingMachine
-              position={new Vector3(0, 2, 8)}
+              position={new Vector3(0, 2, 23)}
               rotation={new Euler(0, Math.PI, 0)}
-              launchInterval={3.0}
-              ballSpeed={12}
-              launchAngle={-5}
+              launchInterval={2.0}
+              ballSpeed={20}
+              launchAngle={-2}
               autoStart={true}
               debugMode={debugMode}
             />
