@@ -12,6 +12,7 @@ export interface BattingMachineProps {
   launchAngle?: number;
   autoStart?: boolean;
   gravityScale?: number;
+  debugMode?: boolean;
 }
 
 // Use a type that omits onRemove as it's handled internally
