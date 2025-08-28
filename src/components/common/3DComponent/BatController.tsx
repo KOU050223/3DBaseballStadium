@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useEffect, useCallback } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Vector3, Euler } from 'three';
 import { Bat, BatProps } from './Bat';
