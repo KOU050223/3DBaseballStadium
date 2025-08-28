@@ -3,6 +3,7 @@
 import React, { Suspense } from 'react';
 import { GLBModel } from '@/components/common/GLBModel';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
+import { RigidBody } from '@react-three/rapier'; // Removed Collider
 import { ModelConfig } from '@/types/modelConfig';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 
@@ -33,11 +34,13 @@ const BaseballStadium: React.FC<BaseballStadiumProps> = ({
         fallback={null}
       >
         <Suspense fallback={null}>
-          <GLBModel
-            modelPath={modelPath}
-            onLoad={onLoad}
-            onError={onError}
-          />
+          <RigidBody type="fixed" colliders="trimesh" name="stadium"> {/* Added name prop */}
+            <GLBModel
+              modelPath={modelPath}
+              onLoad={onLoad}
+              onError={onError}
+            />
+          </RigidBody> {/* Closed RigidBody */}
         </Suspense>
       </ErrorBoundary>
       
