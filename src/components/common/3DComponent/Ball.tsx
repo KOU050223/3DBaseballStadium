@@ -39,10 +39,37 @@ export const Ball: React.FC<BallProps> = ({
     return () => clearTimeout(timer);
   }, [id, initialVelocity, onRemove]);
 
+  const hasCollidedWithTarget = useRef(false); // Add this line
+
   const handleCollision = (payload: CollisionEnterPayload) => {
-    // Check if the ball collided with the bat
-    if (payload.other.rigidBodyObject?.name === 'bat') {
+    const collidedObjectName = payload.other.rigidBodyObject?.name;
+
+    if (collidedObjectName === 'bat') {
       console.log('Ball hit the bat!');
+    }
+
+    if (!hasCollidedWithTarget.current && (collidedObjectName === 'bat' || collidedObjectName === 'stadium')) {
+      console.log(`Ball hit the ${collidedObjectName}! Applying physics changes.`);
+      if (rigidBodyRef.current) {
+        let velocityMultiplier = 7.0;
+        let gravityIncrease = 1.5;
+
+        if (collidedObjectName === 'stadium') {
+          // Adjust these values as desired for stadium collision
+          velocityMultiplier = 1; // Example: 1 times velocity
+          gravityIncrease = 1; // Example: 1 increase in gravity
+        }
+
+        // Apply velocity change
+        const currentVelocity = rigidBodyRef.current.linvel();
+        const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z).multiplyScalar(velocityMultiplier);
+        rigidBodyRef.current.setLinvel(newVelocity, true);
+
+        // Apply gravity change
+        rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
+
+        hasCollidedWithTarget.current = true; // Set flag to true after first collision
+      }
     }
   };
 
