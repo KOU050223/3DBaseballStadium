@@ -14,6 +14,9 @@ export default function HomePage() {
     router.push('/howto');
   };
 
+  const handleSelectModelClick = () => {
+    router.push('/selectModel');
+  };
   return (
     <div className="w-full h-[calc(100vh-80px)] flex flex-col items-center justify-center">
       <button
@@ -27,6 +30,12 @@ export default function HomePage() {
         className="mt-4 px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
       >
         遊び方
+      </button>
+      <button
+        onClick={handleSelectModelClick}
+        className="mt-4 px-6 py-3 bg-red-600 text-white rounded hover:bg-red-700 transition"
+      >
+        モデルを選ぶ
       </button>
     </div>
   );
