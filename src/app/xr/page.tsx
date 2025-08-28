@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
-// クライアントサイドでのみXRシーンを読み込み（SSRを無効化）
 const Scene = dynamic(
   () => import('@/components/feature/xr/Scene').then((mod) => ({ default: mod.Scene })),
   { 
