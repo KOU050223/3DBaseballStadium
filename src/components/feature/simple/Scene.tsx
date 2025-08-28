@@ -10,6 +10,8 @@ import { BatController, BatControllerRef } from '@/components/common/3DComponent
 import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
 import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
+import { Scoreboard } from '@/components/game/Scoreboard';
+import { GameControls } from '@/components/game/GameControls';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -62,6 +64,12 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   return (
     <div className="w-full h-full relative">
+      {/* 電光掲示板風スコアボード */}
+      <Scoreboard />
+      
+      {/* ゲーム制御UI */}
+      <GameControls />
+      
       <Canvas
         camera={{ position: [0, 1.5, -4]}}
       >
