@@ -44,11 +44,14 @@ export class CollisionDetection {
         normal: Vector3,
         restitution: number = 0.8
     ): Vector3 {
-        const dotProduct = velocity.dot(normal);
-        const reflection = velocity.clone().sub(
-            normal.clone().multiplyScalar(2 * dotProduct)
+        // 発射方向とは逆向きに飛ばす
+        const reflection = new Vector3(
+            Math.random() * 10 - 5,
+            Math.abs(velocity.y) + 10,
+            Math.abs(velocity.z) * 1.5
         );
-        return reflection.multiplyScalar(restitution);
+
+        return reflection;
     }
 
     // バット表面の法線ベクトルを計算
