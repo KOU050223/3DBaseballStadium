@@ -8,9 +8,9 @@ export const MODEL_CONFIG = {
     scale: 1
   },
   BAT: {
-    position: new Vector3(2, 1.4, 0),
-    rotation: new Euler(0, 0, 0),
-    scale: 4
+    position: new Vector3(1.4, 1.4, 0),
+    rotation: new Euler(90, 0, 0),
+    scale: 10
   },
   BALL: {
     position: new Vector3(0, 0, 0),
