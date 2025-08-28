@@ -206,7 +206,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           {/* 環境マップ */}
           <Environment preset="sunset" background />
           
-          {/* スタジアムのみ表示 */}
+          {/* スタジアム、バット、バッティングマシーン */}
           <ErrorBoundary fallback={null}>
             <Suspense fallback={
               <mesh position={[0, 0, 0]}>
@@ -214,15 +214,38 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 <meshStandardMaterial color="gray" />
               </mesh>
             }>
-              <BaseballStadium 
-                debugMode={debugMode}
-                position={stadiumPosition}
-                rotation={stadiumRotation}
-                scale={stadiumScale}
-                modelPath="/models/BaseballStadium.glb"
-                onLoad={() => console.log('Stadium loaded successfully')}
-                onError={(error) => console.error('Stadium load error:', error)}
-              />
+              <Physics debug={debugMode}>
+                <BaseballStadium 
+                  debugMode={debugMode}
+                  position={stadiumPosition}
+                  rotation={stadiumRotation}
+                  scale={stadiumScale}
+                  modelPath="/models/BaseballStadium.glb"
+                  onLoad={() => console.log('Stadium loaded successfully')}
+                  onError={(error) => console.error('Stadium load error:', error)}
+                />
+                <BatController
+                  ref={batRef}
+                  position={batPosition}
+                  scale={batScale}
+                  startRotation={new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180)}
+                  endRotation={new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180)}
+                  modelPath="/models/BaseballBat.glb"
+                  onLoad={() => console.log('Bat loaded')}
+                />
+                
+                {/* バッティングマシーンとボール */}
+                <BattingMachine
+                  position={new Vector3(0, 2, 23)}
+                  rotation={new Euler(0, Math.PI, 0)}
+                  launchInterval={2.0}
+                  ballSpeed={ballSpeed}
+                  launchAngle={-2}
+                  autoStart={true}
+                  debugMode={debugMode}
+                  gravityScale={gravityScale}
+                />
+              </Physics>
             </Suspense>
           </ErrorBoundary>
         </XR>
