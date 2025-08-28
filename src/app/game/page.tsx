@@ -1,7 +1,10 @@
+///
+///将来的に消します
+///
 'use client';
 
 import React, { useState } from 'react';
-import { Scene } from '@/components/future/modelTest/Scene';
+import { Scene } from '@/components/feature/simple/Scene';
 
 const GamePage: React.FC = () => {
   const [debugMode, setDebugMode] = useState(false);
