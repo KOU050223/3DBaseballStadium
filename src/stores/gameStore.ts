@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { GameState, CountState, TeamState, InningState, PlayResult, RunnerState, HitType, RunnerAdvancement } from '@/types/game/gameState';
+import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 interface GameStore extends GameState {
   // === アクション ===
@@ -32,6 +33,9 @@ interface GameStore extends GameState {
   
   // プレイ結果処理
   processPlayResult: (result: PlayResult) => void;
+  
+  // フィールドゾーン判定結果処理
+  processFieldJudgment: (result: HitJudgmentResult) => void;
   
   // === 派生状態（ゲッター） ===
   getCountDisplay: () => string;
@@ -380,6 +384,41 @@ export const useGameStore = create<GameStore>()(
       }
     },
     
+    // === フィールドゾーン判定結果処理 ===
+    processFieldJudgment: (result) => {
+      const { currentBatter } = get();
+      
+      console.log(`⚾ Field Judgment: ${result.judgmentType} in zone ${result.zoneId}`, {
+        position: result.position,
+        distance: result.metadata?.distance?.toFixed(1) + 'm',
+        height: result.metadata?.height?.toFixed(1) + 'm'
+      });
+      
+      // 判定タイプに基づいてPlayResultに変換して処理
+      switch (result.judgmentType) {
+        case 'single':
+          get().processPlayResult('single');
+          break;
+        case 'double':
+          get().processPlayResult('double');
+          break;
+        case 'triple':
+          get().processPlayResult('triple');
+          break;
+        case 'homerun':
+          get().processPlayResult('homerun');
+          break;
+        case 'out':
+          get().processPlayResult('out');
+          break;
+        case 'foul':
+          get().processPlayResult('foul');
+          break;
+        default:
+          console.warn(`Unknown judgment type: ${result.judgmentType}`);
+      }
+    },
+    
     // === 派生状態（ゲッター） ===
     getCountDisplay: () => {
       const { count } = get();
@@ -437,6 +476,7 @@ export const useGameActions = () => {
   const startGame = useGameStore((state) => state.startGame);
   const resetGame = useGameStore((state) => state.resetGame);
   const processPlayResult = useGameStore((state) => state.processPlayResult);
+  const processFieldJudgment = useGameStore((state) => state.processFieldJudgment);
 
   return {
     addStrike,
@@ -446,6 +486,7 @@ export const useGameActions = () => {
     addScore,
     startGame,
     resetGame,
-    processPlayResult
+    processPlayResult,
+    processFieldJudgment
   };
 };
