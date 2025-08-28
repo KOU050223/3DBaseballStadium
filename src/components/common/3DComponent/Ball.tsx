@@ -1,40 +1,73 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { Mesh, Vector3 } from 'three';
-import { useFrame } from '@react-three/fiber';
-import { BallProps } from '@/types/game/ball';
+import React, { useRef, useEffect } from 'react';
+import { Vector3 } from 'three';
+import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
+import { useGLBLoader } from '@/hooks/useGLBLoader'; // useGLBLoaderをインポート
+
+export interface BallProps {
+  id: string;
+  initialPosition: Vector3;
+  initialVelocity: Vector3;
+  onRemove: (id: string) => void;
+  radius?: number;
+  gravityScale?: number;
+}
 
 export const Ball: React.FC<BallProps> = ({
   id,
   initialPosition,
-  velocity,
+  initialVelocity,
   onRemove,
-  color = '#ffffff',
-  radius = 0.05
+  radius = 10.0, // Realistic baseball radius
+  gravityScale = 1.5,
 }) => {
-  const meshRef = useRef<Mesh>(null);
-  const positionRef = useRef<Vector3>(initialPosition.clone());
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' }); // useGLBLoaderを使ってモデルをロード
 
-  useFrame((state, delta) => {
-    if (!meshRef.current) return;
-
-    // 位置を更新
-    positionRef.current.add(velocity.clone().multiplyScalar(delta));
-    meshRef.current.position.copy(positionRef.current);
-
-    // ボールが一定範囲を超えたら削除
-    if (positionRef.current.z < -30 || 
-        positionRef.current.y < -5 || 
-        Math.abs(positionRef.current.x) > 20) {
-      onRemove(id);
+  useEffect(() => {
+    // Apply initial impulse when the component mounts
+    if (rigidBodyRef.current) {
+      rigidBodyRef.current.applyImpulse(initialVelocity, true);
     }
-  });
+
+    // Set a timeout to remove the ball after some time to prevent clutter
+    const timer = setTimeout(() => {
+      onRemove(id);
+    }, 10000); // Remove after 10 seconds
+
+    return () => clearTimeout(timer);
+  }, [id, initialVelocity, onRemove]);
+
+  const handleCollision = (payload: CollisionEnterPayload) => {
+    // Check if the ball collided with the bat
+    if (payload.other.rigidBodyObject?.name === 'bat') {
+      console.log('Ball hit the bat!');
+    }
+  };
 
   return (
-    <mesh ref={meshRef} position={initialPosition}>
-      <sphereGeometry args={[radius, 16, 16]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <RigidBody
+      ref={rigidBodyRef}
+      position={initialPosition}
+      colliders={false} // Use a custom collider
+      restitution={0.7} // Bounciness
+      name="ball"
+      onCollisionEnter={handleCollision}
+      gravityScale={gravityScale}
+    >
+      <BallCollider args={[radius * 0.05]} />
+      {glbScene ? (
+        <primitive 
+          object={glbScene.clone()} // glbSceneを直接レンダリング
+          scale={radius} // Adjust scale to match collider
+        />
+      ) : (
+        <mesh>
+          <sphereGeometry args={[radius, 32, 32]} />
+          <meshStandardMaterial color="red" />
+        </mesh>
+      )}
+    </RigidBody>
   );
 };

@@ -1,5 +1,4 @@
-// プレイ画面
-import { Scene } from '@/components/feature/simple/Scene';
+import { Scene } from '@/components/feature/xr/Scene';
 
 export default function Play() {
   return (
