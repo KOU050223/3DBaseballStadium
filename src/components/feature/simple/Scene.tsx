@@ -22,8 +22,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
-  const [ballSpeed, setBallSpeed] = useState<number>(60);
-  const [gravityScale, setGravityScale] = useState<number>(1.5);
+  const [ballSpeed, setBallSpeed] = useState<number>(15);
+  const [gravityScale, setGravityScale] = useState<number>(0);
 
   const batRef = useRef<BatControllerRef>(null);
 
@@ -101,6 +101,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 autoStart={true}
                 debugMode={debugMode}
                 gravityScale={gravityScale}
+                minHeight={0.2}
               />
             </Physics>
           </Suspense>

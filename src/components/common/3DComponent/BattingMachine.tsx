@@ -13,6 +13,7 @@ export interface BattingMachineProps {
   autoStart?: boolean;
   gravityScale?: number;
   debugMode?: boolean;
+  minHeight?: number; // Add minHeight prop
 }
 
 // Use a type that omits onRemove as it's handled internally
@@ -26,6 +27,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
   launchAngle = 0,
   autoStart = true,
   gravityScale = 1.5,
+  minHeight = 0, // Default minHeight to 0
 }) => {
   const [balls, setBalls] = useState<BallState[]>([]);
 
@@ -50,6 +52,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
         initialPosition: position.clone(),
         initialVelocity: initialVelocity,
         gravityScale: gravityScale,
+        minHeight: minHeight, // Pass minHeight to Ball
       };
 
       setBalls(prevBalls => [...prevBalls, newBall]);

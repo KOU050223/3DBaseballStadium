@@ -5,6 +5,8 @@ import { Vector3 } from 'three';
 import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
 import { useGLBLoader } from '@/hooks/useGLBLoader'; // useGLBLoaderをインポート
 
+import { useFrame } from '@react-three/fiber';
+
 export interface BallProps {
   id: string;
   initialPosition: Vector3;
@@ -12,6 +14,7 @@ export interface BallProps {
   onRemove: (id: string) => void;
   radius?: number;
   gravityScale?: number;
+  minHeight?: number; // Add minHeight prop
 }
 
 export const Ball: React.FC<BallProps> = ({
@@ -21,6 +24,7 @@ export const Ball: React.FC<BallProps> = ({
   onRemove,
   radius = 10.0, // Realistic baseball radius
   gravityScale = 1.5,
+  minHeight = 0, // Default minHeight to 0
 }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' }); // useGLBLoaderを使ってモデルをロード
@@ -38,6 +42,20 @@ export const Ball: React.FC<BallProps> = ({
 
     return () => clearTimeout(timer);
   }, [id, initialVelocity, onRemove]);
+
+  useFrame(() => {
+    if (rigidBodyRef.current) {
+      const position = rigidBodyRef.current.translation();
+      const velocity = rigidBodyRef.current.linvel();
+
+      if (position.y < minHeight && velocity.y < 0) {
+        // If ball is below minHeight and moving downwards, stop its vertical movement
+        rigidBodyRef.current.setLinvel({ x: velocity.x, y: 0, z: velocity.z }, true);
+        // Optionally, set its position exactly at minHeight to prevent sinking
+        rigidBodyRef.current.setTranslation({ x: position.x, y: minHeight, z: position.z }, true);
+      }
+    }
+  });
 
   const handleCollision = (payload: CollisionEnterPayload) => {
     // Check if the ball collided with the bat
