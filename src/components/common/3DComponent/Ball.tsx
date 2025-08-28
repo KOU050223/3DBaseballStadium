@@ -4,8 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { Vector3 } from 'three';
 import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
 import { useGLBLoader } from '@/hooks/useGLBLoader';
-import { useFrame } from '@react-three/fiber';
-import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
+import { useRapierFieldZoneManager } from '@/hooks/field/useRapierFieldZoneManager';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 export interface BallProps {
@@ -34,13 +33,12 @@ export const Ball: React.FC<BallProps> = ({
   const hasBeenHitRef = useRef<boolean>(false);
   const isTrackingRef = useRef<boolean>(false);
   
-  // フィールドゾーン管理システム
+  // Rapierベースのフィールドゾーン管理システム
   const { 
     startTracking, 
-    updateBallPosition, 
-    stopTracking, 
-    removeBall 
-  } = useFieldZoneManager();
+    stopTracking,
+    getTrackingInfo
+  } = useRapierFieldZoneManager();
 
   useEffect(() => {
     // Apply initial impulse when the component mounts
@@ -58,42 +56,9 @@ export const Ball: React.FC<BallProps> = ({
       // クリーンアップ時にトラッキングを停止
       if (enableFieldZoneTracking && isTrackingRef.current) {
         stopTracking(id);
-        removeBall(id);
       }
     };
-  }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking, removeBall]);
-
-  // フィールドゾーン判定のためのフレーム更新
-  useFrame((state, delta) => {
-    if (!rigidBodyRef.current || !enableFieldZoneTracking) return;
-
-    const currentPosition = rigidBodyRef.current.translation();
-    const currentVelocity = rigidBodyRef.current.linvel();
-    
-    const position = new Vector3(currentPosition.x, currentPosition.y, currentPosition.z);
-    const velocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
-
-    // バットとの衝突後に追跡を開始
-    if (hasBeenHitRef.current && !isTrackingRef.current) {
-      startTracking(id, position, velocity);
-      isTrackingRef.current = true;
-    }
-
-    // 追跡中の場合は判定を実行
-    if (isTrackingRef.current) {
-      const judgmentResult = updateBallPosition(id, position, velocity, delta);
-
-      // 判定が発生した場合の処理
-      if (judgmentResult) {
-        onJudgment?.(judgmentResult);
-        
-        // 判定完了後はボールを削除
-        setTimeout(() => {
-          onRemove(id);
-        }, 1000); // 1秒後に削除（判定結果表示のため）
-      }
-    }
-  });
+  }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking]);
 
   const handleCollision = (payload: CollisionEnterPayload) => {
     // Check if the ball collided with the bat
@@ -110,6 +75,18 @@ export const Ball: React.FC<BallProps> = ({
           Math.random() * 60 + 20     // 20 to 80
         );
         rigidBodyRef.current.setLinvel(hitVelocity, true);
+
+        // Rapierベースのフィールドゾーン追跡を開始
+        if (enableFieldZoneTracking && !isTrackingRef.current) {
+          startTracking(id, rigidBodyRef.current, (result) => {
+            onJudgment?.(result);
+            // 判定完了後はボールを削除
+            setTimeout(() => {
+              onRemove(id);
+            }, 1500);
+          });
+          isTrackingRef.current = true;
+        }
       }
     }
   };

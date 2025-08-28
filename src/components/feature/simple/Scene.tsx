@@ -12,6 +12,7 @@ import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 import { Scoreboard } from '@/components/game/Scoreboard';
 import { GameControls } from '@/components/game/GameControls';
+import { RapierStadiumFieldVisualizer } from '@/components/field/RapierFieldZone';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -26,6 +27,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
   const [ballSpeed, setBallSpeed] = useState<number>(60);
   const [gravityScale, setGravityScale] = useState<number>(1.5);
+  const [showFieldZones, setShowFieldZones] = useState<boolean>(true);
 
   const batRef = useRef<BatControllerRef>(null);
 
@@ -110,6 +112,15 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 debugMode={debugMode}
                 gravityScale={gravityScale}
               />
+
+              {/* フィールドゾーン表示 */}
+              {showFieldZones && (
+                <RapierStadiumFieldVisualizer 
+                  visible={true} 
+                  animated={true}
+                  showDebugInfo={debugMode}
+                />
+              )}
             </Physics>
           </Suspense>
         </ErrorBoundary>
@@ -195,6 +206,21 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 className="w-full h-1"
               />
               <div className="text-xs text-gray-400">{gravityScale.toFixed(1)}</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-purple-300 mb-2 font-semibold">フィールドゾーン</div>
+            <div className="mb-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showFieldZones}
+                  onChange={(e) => setShowFieldZones(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-gray-300 text-xs">ゾーン表示</span>
+              </label>
             </div>
           </div>
         </div>
