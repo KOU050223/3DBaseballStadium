@@ -28,8 +28,10 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   return (
     <div className="w-full h-full relative">
-      <Canvas>
-        <OrbitControls />
+      <Canvas
+        camera={{ position: [0, 1.5, -4]}}
+      >
+        <OrbitControls target={[0, 1.5, 0]} />
         <Environment preset="sunset" />
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
