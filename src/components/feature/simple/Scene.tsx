@@ -8,8 +8,10 @@ import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
 import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
-import { BatHitbox } from '@/hooks/game/useCollisionManager';
+import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
+import { Scoreboard } from '@/components/game/Scoreboard';
+import { GameControls } from '@/components/game/GameControls';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -22,10 +24,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
-  const [currentBatHitbox, setCurrentBatHitbox] = useState<BatHitbox>({
-    center: batPosition.clone(),
-    size: new Vector3(0.1, 1.2, 0.1)
-  });
+  const [ballSpeed, setBallSpeed] = useState<number>(60);
+  const [gravityScale, setGravityScale] = useState<number>(1.5);
 
   const batRef = useRef<BatControllerRef>(null);
 
@@ -62,13 +62,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
   const endRotation = new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180);
 
-  // バットのヒットボックス更新時の処理
-  const handleBatHitboxUpdate = (hitbox: BatHitbox) => {
-    setCurrentBatHitbox(hitbox);
-  };
-
   return (
     <div className="w-full h-full relative">
+      {/* 電光掲示板風スコアボード */}
+      <Scoreboard />
+      
+      {/* ゲーム制御UI */}
+      <GameControls />
+      
       <Canvas
         camera={{ position: [0, 1.5, -4]}}
       >
@@ -79,36 +80,37 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
         
         <ErrorBoundary fallback={null}>
           <Suspense fallback={null}>
-            <BaseballStadium 
-              debugMode={debugMode}
-              position={stadiumPosition}
-              rotation={stadiumRotation}
-              scale={stadiumScale}
-              modelPath="/models/BaseballStadium.glb"
-              onLoad={() => console.log('Stadium loaded')}
-            />
-            <BatController
-              ref={batRef}
-              position={batPosition}
-              scale={batScale}
-              startRotation={startRotation}
-              endRotation={endRotation}
-              modelPath="/models/BaseballBat.glb"
-              onLoad={() => console.log('Bat loaded')}
-              onHitboxUpdate={handleBatHitboxUpdate}
-            />
-            
-            {/* バッティングマシーンとボール */}
-            <BattingMachine
-              position={new Vector3(0, 2, 23)}
-              rotation={new Euler(0, Math.PI, 0)}
-              launchInterval={2.0}
-              ballSpeed={60}
-              launchAngle={-2}
-              autoStart={true}
-              debugMode={debugMode}
-              batHitbox={currentBatHitbox}
-            />
+            <Physics debug={debugMode}>
+              <BaseballStadium 
+                debugMode={debugMode}
+                position={stadiumPosition}
+                rotation={stadiumRotation}
+                scale={stadiumScale}
+                modelPath="/models/BaseballStadium.glb"
+                onLoad={() => console.log('Stadium loaded')}
+              />
+              <BatController
+                ref={batRef}
+                position={batPosition}
+                scale={batScale}
+                startRotation={startRotation}
+                endRotation={endRotation}
+                modelPath="/models/BaseballBat.glb"
+                onLoad={() => console.log('Bat loaded')}
+              />
+              
+              {/* バッティングマシーンとボール */}
+              <BattingMachine
+                position={new Vector3(0, 2, 23)}
+                rotation={new Euler(0, Math.PI, 0)}
+                launchInterval={2.0}
+                ballSpeed={ballSpeed}
+                launchAngle={-2}
+                autoStart={true}
+                debugMode={debugMode}
+                gravityScale={gravityScale}
+              />
+            </Physics>
           </Suspense>
         </ErrorBoundary>
       </Canvas>
@@ -122,8 +124,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           <div className="mb-4">
             <div className="text-red-300 mb-2 font-semibold">当たり判定</div>
             <div className="text-xs text-gray-300">
-              <div>バット中心: ({currentBatHitbox.center.x.toFixed(1)}, {currentBatHitbox.center.y.toFixed(1)}, {currentBatHitbox.center.z.toFixed(1)})</div>
-              <div>バットサイズ: ({currentBatHitbox.size.x.toFixed(1)}, {currentBatHitbox.size.y.toFixed(1)}, {currentBatHitbox.size.z.toFixed(1)})</div>
               <div>スイング中: {batRef.current?.isSwinging() ? 'Yes' : 'No'}</div>
             </div>
           </div>
@@ -173,6 +173,28 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 className="w-full h-1"
               />
               <div className="text-xs text-gray-400">{batPosition.z.toFixed(1)}</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-green-300 mb-2 font-semibold">ボール</div>
+            <div className="mb-2">
+              <div className="text-gray-300 mb-1">Speed</div>
+              <input
+                type="range" min="10" max="150" step="1" value={ballSpeed}
+                onChange={(e) => setBallSpeed(+e.target.value)}
+                className="w-full h-1"
+              />
+              <div className="text-xs text-gray-400">{ballSpeed}</div>
+            </div>
+            <div className="mb-2">
+              <div className="text-gray-300 mb-1">Gravity</div>
+              <input
+                type="range" min="0" max="5" step="0.1" value={gravityScale}
+                onChange={(e) => setGravityScale(+e.target.value)}
+                className="w-full h-1"
+              />
+              <div className="text-xs text-gray-400">{gravityScale.toFixed(1)}</div>
             </div>
           </div>
         </div>

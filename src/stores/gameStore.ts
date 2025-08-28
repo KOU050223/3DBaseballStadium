@@ -428,13 +428,24 @@ export const useGameInning = () => useGameStore((state) => state.inning);
 export const useGameStatus = () => useGameStore((state) => state.isGameActive);
 
 // === アクションのみ取得（再レンダリング最適化） ===
-export const useGameActions = () => useGameStore((state) => ({
-  addStrike: state.addStrike,
-  addBall: state.addBall,
-  addOut: state.addOut,
-  addHit: state.addHit,
-  addScore: state.addScore,
-  startGame: state.startGame,
-  resetGame: state.resetGame,
-  processPlayResult: state.processPlayResult
-}));
+export const useGameActions = () => {
+  const addStrike = useGameStore((state) => state.addStrike);
+  const addBall = useGameStore((state) => state.addBall);
+  const addOut = useGameStore((state) => state.addOut);
+  const addHit = useGameStore((state) => state.addHit);
+  const addScore = useGameStore((state) => state.addScore);
+  const startGame = useGameStore((state) => state.startGame);
+  const resetGame = useGameStore((state) => state.resetGame);
+  const processPlayResult = useGameStore((state) => state.processPlayResult);
+
+  return {
+    addStrike,
+    addBall,
+    addOut,
+    addHit,
+    addScore,
+    startGame,
+    resetGame,
+    processPlayResult
+  };
+};
