@@ -49,7 +49,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               scale={batScale}
               startRotation={startRotation}
               endRotation={endRotation}
-              modelPath="/models/bat/IronBat.fbx"
+              modelPath="/models/BaseballBat.glb"
               onLoad={() => console.log('Bat loaded')}
             />
             
