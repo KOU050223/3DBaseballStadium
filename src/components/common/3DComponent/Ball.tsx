@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Vector3 } from 'three';
 import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
-import { useGLTF } from '@react-three/drei';
+import { useGLBLoader } from '@/hooks/useGLBLoader'; // useGLBLoaderをインポート
 
 export interface BallProps {
   id: string;
@@ -14,20 +14,16 @@ export interface BallProps {
   gravityScale?: number;
 }
 
-// Preload the model so it's ready
-useGLTF.preload('/models/BaseballBall.glb');
-
 export const Ball: React.FC<BallProps> = ({
   id,
   initialPosition,
   initialVelocity,
   onRemove,
-  radius = 0.5, // Realistic baseball radius
+  radius = 10.0, // Realistic baseball radius
   gravityScale = 1.5,
 }) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
-  const { nodes } = useGLTF('/models/BaseballBall.glb');
-  const ballMesh = nodes.BaseballBall;
+  const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' }); // useGLBLoaderを使ってモデルをロード
 
   useEffect(() => {
     // Apply initial impulse when the component mounts
@@ -60,12 +56,17 @@ export const Ball: React.FC<BallProps> = ({
       onCollisionEnter={handleCollision}
       gravityScale={gravityScale}
     >
-      <BallCollider args={[radius]} />
-      {ballMesh && (
+      <BallCollider args={[radius * 0.05]} />
+      {glbScene ? (
         <primitive 
-          object={ballMesh.clone()} 
-          scale={radius / 2} // Adjust scale to match collider
+          object={glbScene.clone()} // glbSceneを直接レンダリング
+          scale={radius} // Adjust scale to match collider
         />
+      ) : (
+        <mesh>
+          <sphereGeometry args={[radius, 32, 32]} />
+          <meshStandardMaterial color="red" />
+        </mesh>
       )}
     </RigidBody>
   );
