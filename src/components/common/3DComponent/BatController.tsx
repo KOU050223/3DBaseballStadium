@@ -2,7 +2,7 @@
 
 import { useState, useEffect, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Euler } from 'three';
+import { Euler, Vector3 } from 'three';
 import { Bat, BatProps } from '@/components/common/3DComponent/Bat';
 
 // BatControllerが受け取るPropsの型を定義
@@ -66,7 +66,18 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
     }
   });
 
-  return <Bat {...props} rotation={rotation} />;
+  return (
+    <group 
+      position={props.position ? [props.position.x, props.position.y, props.position.z] : [0, 0, 0]}
+      rotation={[rotation.x, rotation.y, rotation.z]}
+    >
+      <Bat 
+        {...props} 
+        rotation={new Euler(0, 0, 0)}
+        position={new Vector3(0, 1.3, 0)}
+      />
+    </group>
+  );
 });
 
 // displayNameを設定してデバッグしやすくする

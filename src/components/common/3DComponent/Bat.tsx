@@ -83,7 +83,7 @@ export const Bat: React.FC<BatProps> = ({
       ref={groupRef}
       position={[position.x, position.y, position.z]}
       rotation={[rotation.x, rotation.y, rotation.z]}
-      scale={[scale, scale, scale]}
+      scale={[Math.abs(scale), -Math.abs(scale), Math.abs(scale)]}
       visible={visible}
     >
       {renderContent()}
