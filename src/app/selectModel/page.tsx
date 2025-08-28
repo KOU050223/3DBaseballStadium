@@ -48,7 +48,7 @@ const ModelSelectPage: React.FC = () => {
     lights[1].position.set(5, 0, -10);
     lights[2].position.set(-5, 0, -10);
     lights[3].position.set(-5, 0, 0);
-    lights.forEach((l) => scene.add(l));
+    lights.forEach((l) => scene.add(l as THREE.Object3D));
 
     let model: THREE.Object3D | null = null;
     const loader = new GLTFLoader();
