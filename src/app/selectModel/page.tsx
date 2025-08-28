@@ -91,7 +91,13 @@ const ModelSelectPage: React.FC = () => {
     localStorage.setItem("selectedModel", JSON.stringify(selectedModel));
     alert(`選択したモデル: ${selectedModel.name}`);
   }
-
+  type FileWithBase64 = {
+  name: string;
+  type: string;
+  size: number;
+  base64: string;
+  file: File;
+};
   return (
     <div style={{ textAlign: "center", padding: "20px",alignSelf:"center" }}>
       <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>モデル選択画面</h1>
@@ -112,7 +118,7 @@ const ModelSelectPage: React.FC = () => {
           </div>
         }
         accept=".glb"
-        callbackFunction={(fileArr: any) => {
+        callbackFunction={(fileArr: FileWithBase64[]) => {
           const file = fileArr[0];
           setModels((prev) => [
             { name: file.name, path: file.base64 },
