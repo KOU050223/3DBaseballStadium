@@ -34,7 +34,7 @@ const BaseballStadium: React.FC<BaseballStadiumProps> = ({
         fallback={null}
       >
         <Suspense fallback={null}>
-          <RigidBody type="fixed" colliders="trimesh"> {/* Removed debug prop */}
+          <RigidBody type="fixed" colliders="trimesh" name="stadium"> {/* Added name prop */}
             <GLBModel
               modelPath={modelPath}
               onLoad={onLoad}
