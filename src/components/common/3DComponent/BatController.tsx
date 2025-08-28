@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useEffect, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Euler, Vector3 } from 'three';
-import { Bat, BatProps } from '@/components/common/3DComponent/Bat';
+import { Vector3, Euler } from 'three';
+import { Bat, BatProps } from './Bat';
 import { BatHitbox } from '@/hooks/game/useCollisionManager';
 
 // BatControllerが受け取るPropsの型を定義
@@ -27,21 +27,21 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
   const swingSpeed = 0.1;
 
   // バットのヒットボックスを計算
-const calculateBatHitbox = (): BatHitbox => {
-  let batSize: Vector3;
-  const batCenter = position.clone();
-  
-  if (isSwinging) {
-    // スイング中は横向きの当たり判定（幅を大きく、高さを小さく）
-    batSize = new Vector3(1.5 * scale, 0.2 * scale, 0.5 * scale);
-    batCenter.add(new Vector3(0.3 * swingProgress, 0, 0.2 * swingProgress));
-  } else {
-    // 通常時は縦向きの当たり判定
-    batSize = new Vector3(0.1 * scale, 1.2 * scale, 0.1 * scale);
-  }
+  const calculateBatHitbox = useCallback((): BatHitbox => {
+    let batSize: Vector3;
+    const batCenter = position.clone();
+    
+    if (isSwinging) {
+      // スイング中は横向きの当たり判定（幅を大きく、高さを小さく）
+      batSize = new Vector3(1.5 * scale, 0.2 * scale, 0.5 * scale);
+      batCenter.add(new Vector3(0.3 * swingProgress, 0, 0.2 * swingProgress));
+    } else {
+      // 通常時は縦向きの当たり判定
+      batSize = new Vector3(0.1 * scale, 1.2 * scale, 0.1 * scale);
+    }
 
-  return { center: batCenter, size: batSize };
-};
+    return { center: batCenter, size: batSize };
+  }, [position, scale, isSwinging, swingProgress]);
 
   // refで外部からアクセス可能なメソッドを定義
   useImperativeHandle(ref, () => ({
@@ -49,12 +49,12 @@ const calculateBatHitbox = (): BatHitbox => {
     isSwinging: () => isSwinging
   }));
 
-  const triggerSwing = () => {
+  const triggerSwing = useCallback(() => {
     if (!isSwinging) {
       setSwingProgress(0);
       setIsSwinging(true);
     }
-  };
+  }, [isSwinging]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -66,7 +66,7 @@ const calculateBatHitbox = (): BatHitbox => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSwinging]);
+  }, [triggerSwing]);
 
   // ヒットボックスの更新を親に通知
   useEffect(() => {
@@ -74,7 +74,7 @@ const calculateBatHitbox = (): BatHitbox => {
       const hitbox = calculateBatHitbox();
       onHitboxUpdate(hitbox);
     }
-  }, [isSwinging, swingProgress, position, scale, onHitboxUpdate]);
+  }, [isSwinging, swingProgress, position, scale, onHitboxUpdate, calculateBatHitbox]);
 
   useFrame(() => {
     if (isSwinging) {

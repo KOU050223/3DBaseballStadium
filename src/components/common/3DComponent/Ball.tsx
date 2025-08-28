@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Mesh, Vector3 } from 'three';
+import { Mesh, Vector3, MeshStandardMaterial } from 'three';
 import { useFrame } from '@react-three/fiber';
 
 export interface BallProps {
@@ -38,7 +38,7 @@ useFrame((state, delta) => {
       velocityRef.current.copy(newVelocity);  
       
       // ヒット時は色を変更
-      const material = meshRef.current.material as any;
+      const material = meshRef.current.material as MeshStandardMaterial;
       if (material) {
         material.color.setHex(0xff0000);
       }

@@ -25,8 +25,7 @@ export const FBXModel: React.FC<FBXModelProps> = ({
     scale,
     position,
     rotation,
-    onLoad, 
-    onError 
+    onLoad 
   });
 
   if (!fbx) return null;

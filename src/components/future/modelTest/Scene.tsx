@@ -16,9 +16,9 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
-  const [stadiumScale, setStadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
-  const [stadiumPosition, setStadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
-  const [stadiumRotation, setStadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
+  const [stadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
+  const [stadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
+  const [stadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);

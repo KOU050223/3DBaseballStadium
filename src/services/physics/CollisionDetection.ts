@@ -44,10 +44,10 @@ export class CollisionDetection {
         normal: Vector3,
         restitution: number = 0.8
     ): Vector3 {
-        // 発射方向とは逆向きに飛ばす
+        // 反発係数を考慮した反射ベクトルを計算
         const reflection = new Vector3(
             Math.random() * 10 - 5,
-            Math.abs(velocity.y) + 10,
+            Math.abs(velocity.y) * restitution + 10,
             Math.abs(velocity.z) * 1.5
         );
 
