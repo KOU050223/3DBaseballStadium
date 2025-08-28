@@ -81,16 +81,16 @@ flowchart TD
     A[3D Ball Physics] -->|Ball Position| B{Strike Zone Check}
     C[Bat Controller] -->|Swing Data| D{Ball-Bat Collision?}
     
-    B -->|Strike| E[processPlayResult('strike')]
-    B -->|Ball| F[processPlayResult('ball')]
+    B -->|Strike| E[processPlayResult-strike]
+    B -->|Ball| F[processPlayResult-ball]
     
     D -->|Hit| G{Calculate Hit Type}
-    D -->|Miss| H[processPlayResult('strike')]
+    D -->|Miss| H[processPlayResult-strike]
     
-    G -->|Power > 80| I[processPlayResult('homerun')]
-    G -->|Power > 60| J[processPlayResult('triple')]
-    G -->|Power > 40| K[processPlayResult('double')]
-    G -->|Power <= 40| L[processPlayResult('single')]
+    G -->|Power > 80| I[processPlayResult-homerun]
+    G -->|Power > 60| J[processPlayResult-triple]
+    G -->|Power > 40| K[processPlayResult-double]
+    G -->|Power <= 40| L[processPlayResult-single]
     
     E --> M[GameStore Update]
     F --> M
@@ -100,16 +100,16 @@ flowchart TD
     K --> N
     L --> N
     
-    N --> O[advanceRunners()]
-    O --> P[processRunnerScoring()]
+    N --> O[advanceRunners]
+    O --> P[processRunnerScoring]
     P --> Q[Update Team State]
     
     M --> R[Count Update]
     R --> S{Check Game State}
     
-    S -->|3 Strikes| T[addOut()]
+    S -->|3 Strikes| T[addOut]
     S -->|4 Balls| U[Walk to 1st Base]
-    S -->|3 Outs| V[nextInning()]
+    S -->|3 Outs| V[nextInning]
     
     Q --> W[UI Update]
     T --> W
@@ -200,7 +200,7 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> GameInitialized
     
-    GameInitialized --> GameStarted : startGame()
+    GameInitialized --> GameStarted : startGame
     GameStarted --> Pitching : First Batter
     
     state Pitching {
@@ -248,8 +248,8 @@ stateDiagram-v2
         ExtraInnings --> Pitching : Continue
     }
     
-    GameOver --> [*] : resetGame()
-    GameStarted --> GameInitialized : resetGame()
+    GameOver --> [*] : resetGame
+    GameStarted --> GameInitialized : resetGame
 ```
 
 ## ランナー状態図
@@ -476,10 +476,10 @@ sequenceDiagram
     participant Display as GameStateDisplay
     
     User->>UI: 出塁判定
-    UI->>Store: processPlayResult('double')
+    UI->>Store: processPlayResult-double
     
     Store->>Store: 現在のバッターチーム取得
-    Store->>Logic: advanceRunners(team, 'double')
+    Store->>Logic: advanceRunners(team, double)
     
     Logic->>Logic: バッター → 2塁
     Logic->>Logic: 1塁ランナー → 3塁
