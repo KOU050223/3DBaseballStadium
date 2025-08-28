@@ -22,7 +22,8 @@ export const useGLBLoader = ({
 
   // useGLTFは非同期でモデルをロードし、エラー時は例外を投げる
   // ErrorBoundaryとSuspenseでハンドリングされる
-  const glb = useGLTF(modelPath); useEffect(() => {
+  const glb = useGLTF(modelPath);
+  useEffect(() => {
     if (glb && glb.scene) {
       // 基本的なトランスフォーム設定
       glb.scene.scale.set(scale[0], scale[1], scale[2]);

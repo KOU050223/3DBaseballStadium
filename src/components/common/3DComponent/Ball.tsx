@@ -1,8 +1,9 @@
-
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Mesh, Vector3, MeshStandardMaterial } from 'three';
+import { Vector3 } from 'three';
+import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
+import { useGLBLoader } from '@/hooks/useGLBLoader';
 import { useFrame } from '@react-three/fiber';
 import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
@@ -10,12 +11,10 @@ import { HitJudgmentResult } from '@/types/field/hitJudgment';
 export interface BallProps {
   id: string;
   initialPosition: Vector3;
-  velocity: Vector3;
+  initialVelocity: Vector3;
   onRemove: (id: string) => void;
-  color?: string;
   radius?: number;
-  gravity?: number;
-  onHit?: (ballId: string, position: Vector3, velocity: Vector3) => Vector3 | null;
+  gravityScale?: number;
   onJudgment?: (result: HitJudgmentResult) => void;
   enableFieldZoneTracking?: boolean;
 }
@@ -23,18 +22,15 @@ export interface BallProps {
 export const Ball: React.FC<BallProps> = ({
   id,
   initialPosition,
-  velocity,
+  initialVelocity,
   onRemove,
-  onHit,
+  radius = 10.0, // Realistic baseball radius
+  gravityScale = 1.5,
   onJudgment,
-  color = '#ffffff',
-  radius = 0.3,
-  gravity = 9.8,
   enableFieldZoneTracking = true
 }) => {
-  const meshRef = useRef<Mesh>(null);
-  const positionRef = useRef<Vector3>(initialPosition.clone());
-  const velocityRef = useRef<Vector3>(velocity.clone());
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' });
   const hasBeenHitRef = useRef<boolean>(false);
   const isTrackingRef = useRef<boolean>(false);
   
@@ -46,91 +42,100 @@ export const Ball: React.FC<BallProps> = ({
     removeBall 
   } = useFieldZoneManager();
 
-  // ボール追跡の開始
   useEffect(() => {
-    if (enableFieldZoneTracking && !isTrackingRef.current) {
-      startTracking(id, positionRef.current, velocityRef.current);
-      isTrackingRef.current = true;
+    // Apply initial impulse when the component mounts
+    if (rigidBodyRef.current) {
+      rigidBodyRef.current.applyImpulse(initialVelocity, true);
     }
 
+    // Set a timeout to remove the ball after some time to prevent clutter
+    const timer = setTimeout(() => {
+      onRemove(id);
+    }, 10000); // Remove after 10 seconds
+
     return () => {
+      clearTimeout(timer);
+      // クリーンアップ時にトラッキングを停止
       if (enableFieldZoneTracking && isTrackingRef.current) {
         stopTracking(id);
         removeBall(id);
-        isTrackingRef.current = false;
       }
     };
-  }, [id, enableFieldZoneTracking, startTracking, stopTracking, removeBall]);
+  }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking, removeBall]);
 
-useFrame((state, delta) => {
-  if (!meshRef.current) return;
+  // フィールドゾーン判定のためのフレーム更新
+  useFrame((state, delta) => {
+    if (!rigidBodyRef.current || !enableFieldZoneTracking) return;
 
-  // バット当たり判定チェック
-  if (onHit && !hasBeenHitRef.current) {
-    const newVelocity = onHit(id, positionRef.current, velocityRef.current);
-    if (newVelocity) {
-      velocityRef.current.copy(newVelocity);
+    const currentPosition = rigidBodyRef.current.translation();
+    const currentVelocity = rigidBodyRef.current.linvel();
+    
+    const position = new Vector3(currentPosition.x, currentPosition.y, currentPosition.z);
+    const velocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+
+    // バットとの衝突後に追跡を開始
+    if (hasBeenHitRef.current && !isTrackingRef.current) {
+      startTracking(id, position, velocity);
+      isTrackingRef.current = true;
+    }
+
+    // 追跡中の場合は判定を実行
+    if (isTrackingRef.current) {
+      const judgmentResult = updateBallPosition(id, position, velocity, delta);
+
+      // 判定が発生した場合の処理
+      if (judgmentResult) {
+        onJudgment?.(judgmentResult);
+        
+        // 判定完了後はボールを削除
+        setTimeout(() => {
+          onRemove(id);
+        }, 1000); // 1秒後に削除（判定結果表示のため）
+      }
+    }
+  });
+
+  const handleCollision = (payload: CollisionEnterPayload) => {
+    // Check if the ball collided with the bat
+    if (payload.other.rigidBodyObject?.name === 'bat') {
+      console.log('Ball hit the bat!');
       hasBeenHitRef.current = true;
       
-      // ヒット時は色を変更
-      const material = meshRef.current.material as MeshStandardMaterial;
-      if (material) {
-        material.color.setHex(0xff0000);
+      // バット接触時の処理（必要に応じて速度調整等）
+      if (rigidBodyRef.current) {
+        // より強い打撃力を適用（例）
+        const hitVelocity = new Vector3(
+          (Math.random() - 0.5) * 40, // -20 to 20
+          Math.random() * 30 + 10,    // 10 to 40
+          Math.random() * 60 + 20     // 20 to 80
+        );
+        rigidBodyRef.current.setLinvel(hitVelocity, true);
       }
-      
-      // フィールドゾーン追跡を開始（バット接触後）
-      if (enableFieldZoneTracking && !isTrackingRef.current) {
-        startTracking(id, positionRef.current, velocityRef.current);
-        isTrackingRef.current = true;
-      }
     }
-  }
-
-  // 重力適用（常に）
-  velocityRef.current.y -= gravity * delta;
-
-  // 位置更新
-  positionRef.current.add(velocityRef.current.clone().multiplyScalar(delta));
-  meshRef.current.position.copy(positionRef.current);
-
-  // フィールドゾーン判定（追跡中の場合）
-  if (enableFieldZoneTracking && isTrackingRef.current) {
-    const judgmentResult = updateBallPosition(
-      id,
-      positionRef.current,
-      velocityRef.current,
-      delta
-    );
-
-    // 判定が発生した場合の処理
-    if (judgmentResult) {
-      onJudgment?.(judgmentResult);
-      
-      // 判定完了後はボールを削除
-      setTimeout(() => {
-        onRemove(id);
-      }, 1000); // 1秒後に削除（判定結果表示のため）
-      
-      return; // フレーム処理を終了
-    }
-  }
-
-  // ボールが一定範囲を超えたら削除
-  if (positionRef.current.z < -30 || 
-      positionRef.current.y < -10 || 
-      Math.abs(positionRef.current.x) > 50) {
-    if (isTrackingRef.current) {
-      stopTracking(id);
-      removeBall(id);
-    }
-    onRemove(id);
-  }
-});
+  };
 
   return (
-    <mesh ref={meshRef} position={initialPosition}>
-      <sphereGeometry args={[radius, 16, 16]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <RigidBody
+      ref={rigidBodyRef}
+      position={initialPosition}
+      colliders={false} // Use a custom collider
+      restitution={0.7} // Bounciness
+      name="ball"
+      onCollisionEnter={handleCollision}
+      gravityScale={gravityScale}
+    >
+      <BallCollider args={[radius * 0.05]} />
+      {glbScene ? (
+        <primitive 
+          object={glbScene.clone()} // glbSceneを直接レンダリング
+          scale={radius} // Adjust scale to match collider
+        />
+      ) : (
+        <mesh>
+          <sphereGeometry args={[radius, 32, 32]} />
+          <meshStandardMaterial color="red" />
+        </mesh>
+      )}
+    </RigidBody>
   );
 };
