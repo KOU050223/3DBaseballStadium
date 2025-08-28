@@ -1,10 +1,8 @@
 'use client';
 
-import React from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Vector3, Euler } from 'three';
-import { Ball } from './Ball';
-import { useBattingMachine } from '@/hooks/game/useBattingMachine';
+import { Ball, BallProps } from './Ball';
 
 export interface BattingMachineProps {
   position?: Vector3;
@@ -13,80 +11,81 @@ export interface BattingMachineProps {
   ballSpeed?: number;
   launchAngle?: number;
   autoStart?: boolean;
+  gravityScale?: number;
   debugMode?: boolean;
 }
 
-export const BattingMachine: React.FC<BattingMachineProps> = ({
-  position = new Vector3(0, 2, -5),
-  rotation = new Euler(0, 0, 0),
-  launchInterval = 2.0,
-  ballSpeed = 15,
-  launchAngle = -10,
-  autoStart = true,
-  debugMode = false
-}) => {
-  const { balls, controls } = useBattingMachine({
-    position,
-    rotation,
-    launchInterval,
-    ballSpeed,
-    launchAngle,
-    autoStart
-  });
+// Use a type that omits onRemove as it's handled internally
+type BallState = Omit<BallProps, 'onRemove'>;
 
-  useFrame((state) => {
-    const launcher = controls.getLauncher();
-    if (launcher) {
-      launcher.update(state.clock.elapsedTime * 1000);
-    }
-  });
+export const BattingMachine: React.FC<BattingMachineProps> = ({
+  position = new Vector3(0, 2, 13),
+  rotation = new Euler(0, Math.PI, 0),
+  launchInterval = 3.0,
+  ballSpeed = 0.01,
+  launchAngle = 0,
+  autoStart = true,
+  gravityScale = 1.5,
+}) => {
+  const [balls, setBalls] = useState<BallState[]>([]);
+
+  useEffect(() => {
+    if (!autoStart) return;
+
+    const launchBall = () => {
+      const newBallId = `ball_${Date.now()}`;
+      
+      // Calculate initial velocity based on speed and angle
+      const angleInRadians = (launchAngle * Math.PI) / 180;
+      const initialVelocity = new Vector3(
+        0,
+        ballSpeed * Math.sin(angleInRadians),
+        ballSpeed * Math.cos(angleInRadians)
+      );
+      // Apply the machine's rotation to the velocity
+      initialVelocity.applyEuler(rotation);
+
+      const newBall: BallState = {
+        id: newBallId,
+        initialPosition: position.clone(),
+        initialVelocity: initialVelocity,
+        gravityScale: gravityScale,
+      };
+
+      setBalls(prevBalls => [...prevBalls, newBall]);
+    };
+
+    const intervalId = setInterval(launchBall, launchInterval * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [autoStart, launchInterval, ballSpeed, launchAngle, position, rotation, gravityScale]);
+
+  const handleRemoveBall = useCallback((id: string) => {
+    setBalls(prevBalls => prevBalls.filter(ball => ball.id !== id));
+  }, []);
 
   return (
     <>
-      {/* バッティングマシーン本体の表示 */}
+      {/* Batting machine model */}
       <group position={position} rotation={rotation}>
         <mesh>
           <boxGeometry args={[0.5, 0.3, 0.8]} />
           <meshStandardMaterial color="#333333" />
         </mesh>
-        {/* 発射口 */}
         <mesh position={[0, 0, 0.4]}>
           <cylinderGeometry args={[0.05, 0.05, 0.2, 16]} />
           <meshStandardMaterial color="#666666" />
         </mesh>
       </group>
 
-      {/* ボールをレンダリング */}
-      {Array.from(balls.values()).map(ballProps => (
-        <Ball key={ballProps.id} {...ballProps} />
+      {/* Render the balls */}
+      {balls.map(ballProps => (
+        <Ball 
+          key={ballProps.id} 
+          {...ballProps} 
+          onRemove={handleRemoveBall}
+        />
       ))}
     </>
   );
 };
-
-export const BattingMachineDebugControls: React.FC<{
-  controls: {
-    start: () => void;
-    stop: () => void;
-    getBallCount: () => number;
-  };
-}> = ({ controls }) => (
-  <div className="fixed top-4 left-4 z-50 bg-gray-800 text-white p-3 rounded text-xs">
-    <div className="mb-2 font-bold">バッティングマシーン</div>
-    <div className="mb-1">アクティブボール数: {controls.getBallCount()}</div>
-    <div className="flex gap-2 mt-2">
-      <button 
-        onClick={controls.start}
-        className="px-2 py-1 bg-green-600 rounded text-xs"
-      >
-        開始
-      </button>
-      <button 
-        onClick={controls.stop}
-        className="px-2 py-1 bg-red-600 rounded text-xs"
-      >
-        停止
-      </button>
-    </div>
-  </div>
-);
