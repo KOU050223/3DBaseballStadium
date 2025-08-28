@@ -1,51 +1,31 @@
 'use client';
 
-import React, { useState, forwardRef, useImperativeHandle, useEffect, useCallback } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useCallback, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3, Euler } from 'three';
+import { Vector3, Euler, Quaternion } from 'three';
+import { RigidBody, MeshCollider, RapierRigidBody } from '@react-three/rapier';
 import { Bat, BatProps } from './Bat';
-import { BatHitbox } from '@/hooks/game/useCollisionManager';
 
 // BatControllerが受け取るPropsの型を定義
 interface BatControllerProps extends Omit<BatProps, 'rotation'> {
   startRotation: Euler;
   endRotation: Euler;
-  onHitboxUpdate?: (hitbox: BatHitbox) => void;
 }
 
 export interface BatControllerRef {
-  getBatHitbox: () => BatHitbox;
   isSwinging: () => boolean;
 }
 
 export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
-  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale = 1, onHitboxUpdate } = props;
-  const [rotation, setRotation] = useState(startRotation);
+  const { startRotation, endRotation, position = new Vector3(0, 0, 0) } = props;
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingProgress, setSwingProgress] = useState(0);
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
 
   const swingSpeed = 0.1;
 
-  // バットのヒットボックスを計算
-  const calculateBatHitbox = useCallback((): BatHitbox => {
-    let batSize: Vector3;
-    const batCenter = position.clone();
-    
-    if (isSwinging) {
-      // スイング中は横向きの当たり判定（幅を大きく、高さを小さく）
-      batSize = new Vector3(1.5 * scale, 0.2 * scale, 0.5 * scale);
-      batCenter.add(new Vector3(0.3 * swingProgress, 0, 0.2 * swingProgress));
-    } else {
-      // 通常時は縦向きの当たり判定
-      batSize = new Vector3(0.1 * scale, 1.2 * scale, 0.1 * scale);
-    }
-
-    return { center: batCenter, size: batSize };
-  }, [position, scale, isSwinging, swingProgress]);
-
   // refで外部からアクセス可能なメソッドを定義
   useImperativeHandle(ref, () => ({
-    getBatHitbox: calculateBatHitbox,
     isSwinging: () => isSwinging
   }));
 
@@ -68,15 +48,15 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
     };
   }, [triggerSwing]);
 
-  // ヒットボックスの更新を親に通知
-  useEffect(() => {
-    if (onHitboxUpdate) {
-      const hitbox = calculateBatHitbox();
-      onHitboxUpdate(hitbox);
-    }
-  }, [isSwinging, swingProgress, position, scale, onHitboxUpdate, calculateBatHitbox]);
-
   useFrame(() => {
+    if (!rigidBodyRef.current) return;
+
+    // 毎フレーム、親から渡された位置情報を物理ボディに適用
+    rigidBodyRef.current.setNextKinematicTranslation(position);
+
+    const startQuat = new Quaternion().setFromEuler(startRotation);
+    const endQuat = new Quaternion().setFromEuler(endRotation);
+
     if (isSwinging) {
       let newProgress = swingProgress + swingSpeed;
       if (newProgress >= 1) {
@@ -85,33 +65,38 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
       }
       setSwingProgress(newProgress);
 
-      const interpolatedRotation = new Euler(
-        startRotation.x + (endRotation.x - startRotation.x) * newProgress,
-        startRotation.y + (endRotation.y - startRotation.y) * newProgress,
-        startRotation.z + (endRotation.z - startRotation.z) * newProgress
-      );
-      setRotation(interpolatedRotation);
+      const interpolatedQuaternion = new Quaternion().copy(startQuat).slerp(endQuat, newProgress);
+      rigidBodyRef.current.setNextKinematicRotation(interpolatedQuaternion);
 
       if (newProgress >= 1) {
         setTimeout(() => {
-          setRotation(startRotation);
+          if (rigidBodyRef.current) {
+            rigidBodyRef.current.setNextKinematicRotation(startQuat);
+          }
           setSwingProgress(0);
         }, 150);
       }
+    } else {
+        // スイング中でないときは、常に開始時の角度に設定
+        rigidBodyRef.current.setNextKinematicRotation(startQuat);
     }
   });
 
   return (
-    <group 
-      position={props.position ? [props.position.x, props.position.y, props.position.z] : [0, 0, 0]}
-      rotation={[rotation.x, rotation.y, rotation.z]}
+    <RigidBody
+      ref={rigidBodyRef}
+      type="kinematicPosition"
+      colliders={false} // カスタムのColliderを使うため、デフォルトは無効化
+      name="bat" // デバッグや衝突イベントで識別しやすくするために名前をつける
     >
-      <Bat 
-        {...props} 
-        rotation={new Euler(0, 0, 0)}
-        position={new Vector3(0, 1.3, 0)}
-      />
-    </group>
+      <MeshCollider type="hull">
+        <Bat 
+          {...props} 
+          rotation={new Euler(0, 0, 0)} // 回転はRigidBodyで制御するのでリセット
+          position={new Vector3(0, 1.3, 0)}
+        />
+      </MeshCollider>
+    </RigidBody>
   );
 });
 

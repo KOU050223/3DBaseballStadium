@@ -1,73 +1,72 @@
-
 'use client';
 
-import React, { useRef } from 'react';
-import { Mesh, Vector3, MeshStandardMaterial } from 'three';
-import { useFrame } from '@react-three/fiber';
+import React, { useRef, useEffect } from 'react';
+import { Vector3 } from 'three';
+import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
+import { useGLTF } from '@react-three/drei';
 
 export interface BallProps {
   id: string;
   initialPosition: Vector3;
-  velocity: Vector3;
+  initialVelocity: Vector3;
   onRemove: (id: string) => void;
-  color?: string;
   radius?: number;
-  onHit?: (ballId: string, position: Vector3, velocity: Vector3) => Vector3 | null;
+  gravityScale?: number;
 }
+
+// Preload the model so it's ready
+useGLTF.preload('/models/BaseballBall.glb');
 
 export const Ball: React.FC<BallProps> = ({
   id,
   initialPosition,
-  velocity,
+  initialVelocity,
   onRemove,
-  onHit,
-  color = '#ffffff',
-  radius = 0.3
+  radius = 0.5, // Realistic baseball radius
+  gravityScale = 1.5,
 }) => {
-  const meshRef = useRef<Mesh>(null);
-  const positionRef = useRef<Vector3>(initialPosition.clone());
-  const velocityRef = useRef<Vector3>(velocity.clone());
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const { nodes } = useGLTF('/models/BaseballBall.glb');
+  const ballMesh = nodes.BaseballBall;
 
-useFrame((state, delta) => {
-  if (!meshRef.current) return;
-
-  // 当たり判定チェック
-  if (onHit) {
-    const newVelocity = onHit(id, positionRef.current, velocityRef.current);
-    if (newVelocity) {
-      velocityRef.current.copy(newVelocity);  
-      
-      // ヒット時は色を変更
-      const material = meshRef.current.material as MeshStandardMaterial;
-      if (material) {
-        material.color.setHex(0xff0000);
-      }
-      
-      // 当たった後は当たり判定を無効化
-      onHit = undefined;
+  useEffect(() => {
+    // Apply initial impulse when the component mounts
+    if (rigidBodyRef.current) {
+      rigidBodyRef.current.applyImpulse(initialVelocity, true);
     }
-  }
 
-  
-  if (onHit) {  
-    velocityRef.current.y -= 9.8 * delta;
-  }
+    // Set a timeout to remove the ball after some time to prevent clutter
+    const timer = setTimeout(() => {
+      onRemove(id);
+    }, 10000); // Remove after 10 seconds
 
-  positionRef.current.add(velocityRef.current.clone().multiplyScalar(delta));
-  meshRef.current.position.copy(positionRef.current);
+    return () => clearTimeout(timer);
+  }, [id, initialVelocity, onRemove]);
 
-  // ボールが一定範囲を超えたら削除
-  if (positionRef.current.z < -30 || 
-      positionRef.current.y < -5 || 
-      Math.abs(positionRef.current.x) > 20) {
-    onRemove(id);
-  }
-});
+  const handleCollision = (payload: CollisionEnterPayload) => {
+    // Check if the ball collided with the bat
+    if (payload.other.rigidBodyObject?.name === 'bat') {
+      console.log('Ball hit the bat!');
+    }
+  };
 
   return (
-    <mesh ref={meshRef} position={initialPosition}>
-      <sphereGeometry args={[radius, 16, 16]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <RigidBody
+      ref={rigidBodyRef}
+      position={initialPosition}
+      colliders={false} // Use a custom collider
+      restitution={0.7} // Bounciness
+      name="ball"
+      onCollisionEnter={handleCollision}
+      gravityScale={gravityScale}
+    >
+      <BallCollider args={[radius]} />
+      {ballMesh && (
+        <primitive 
+          object={ballMesh.clone()} 
+          scale={radius / 2} // Adjust scale to match collider
+        />
+      )}
+    </RigidBody>
   );
 };
