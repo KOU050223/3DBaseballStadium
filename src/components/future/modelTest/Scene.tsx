@@ -2,7 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
@@ -28,6 +28,35 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   });
 
   const batRef = useRef<BatControllerRef>(null);
+
+  // キーボード操作でバットの位置を調整
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        setBatPosition(currentPosition => {
+          const step = -0.05;
+          let newX = currentPosition.x;
+
+          if (event.key === 'ArrowLeft') {
+            newX -= step;
+          } else {
+            newX += step;
+          }
+          
+          // X座標を 0.7 から 2.5 の範囲に制限
+          const clampedX = Math.max(0.7, Math.min(2.5, newX));
+          
+          return new Vector3(clampedX, currentPosition.y, currentPosition.z);
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
@@ -103,6 +132,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             <div className="text-yellow-300 mb-2 font-semibold">操作</div>
             <div className="text-xs text-gray-300">
               <div>スペースキー: バットスイング</div>
+              <div>左右矢印キー: バット左右移動</div>
             </div>
           </div>
           
