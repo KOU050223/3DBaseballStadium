@@ -101,7 +101,18 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
     }
   });
 
-  return <Bat {...props} rotation={rotation} />;
+  return (
+    <group 
+      position={props.position ? [props.position.x, props.position.y, props.position.z] : [0, 0, 0]}
+      rotation={[rotation.x, rotation.y, rotation.z]}
+    >
+      <Bat 
+        {...props} 
+        rotation={new Euler(0, 0, 0)}
+        position={new Vector3(0, 1.3, 0)}
+      />
+    </group>
+  );
 });
 
 BatController.displayName = 'BatController';
