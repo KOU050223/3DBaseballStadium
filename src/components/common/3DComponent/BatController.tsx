@@ -1,24 +1,53 @@
 'use client';
 
-import { useState, useEffect, forwardRef } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Euler } from 'three';
+import { Euler, Vector3 } from 'three';
 import { Bat, BatProps } from '@/components/common/3DComponent/Bat';
+import { BatHitbox } from '@/hooks/game/useCollisionManager';
 
 // BatControllerが受け取るPropsの型を定義
-interface BatControllerProps extends Omit<BatProps, 'rotation'> { // rotationは内部で管理
-  startRotation: Euler; // 開始角度
-  endRotation: Euler;   // 終了角度
+interface BatControllerProps extends Omit<BatProps, 'rotation'> {
+  startRotation: Euler;
+  endRotation: Euler;
+  onHitboxUpdate?: (hitbox: BatHitbox) => void;
 }
 
-export const BatController = forwardRef<unknown, BatControllerProps>((props, ref) => {
-  const { startRotation, endRotation } = props; // propsから取得
-  const [rotation, setRotation] = useState(startRotation); // 初期状態は開始角度
+export interface BatControllerRef {
+  getBatHitbox: () => BatHitbox;
+  isSwinging: () => boolean;
+}
 
+export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
+  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale = 1, onHitboxUpdate } = props;
+  const [rotation, setRotation] = useState(startRotation);
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingProgress, setSwingProgress] = useState(0);
 
-  const swingSpeed = 0.1; // スイングの速さ
+  const swingSpeed = 0.1;
+
+  // バットのヒットボックスを計算
+const calculateBatHitbox = (): BatHitbox => {
+  let batSize: Vector3;
+  const batCenter = position.clone();
+  
+  if (isSwinging) {
+    // スイング中は横向きの当たり判定（幅を大きく、高さを小さく）
+    batSize = new Vector3(1.5 * scale, 0.2 * scale, 0.5 * scale);
+    batCenter.add(new Vector3(0.3 * swingProgress, 0, 0.2 * swingProgress));
+  } else {
+    // 通常時は縦向きの当たり判定
+    batSize = new Vector3(0.1 * scale, 1.2 * scale, 0.1 * scale);
+  }
+
+  return { center: batCenter, size: batSize };
+};
+
+  // refで外部からアクセス可能なメソッドを定義
+  useImperativeHandle(ref, () => ({
+    getBatHitbox: calculateBatHitbox,
+    isSwinging: () => isSwinging
+  }));
 
   const triggerSwing = () => {
     if (!isSwinging) {
@@ -39,7 +68,14 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
     };
   }, [isSwinging]);
 
-  // useFrame内でアニメーションを更新
+  // ヒットボックスの更新を親に通知
+  useEffect(() => {
+    if (onHitboxUpdate) {
+      const hitbox = calculateBatHitbox();
+      onHitboxUpdate(hitbox);
+    }
+  }, [isSwinging, swingProgress, position, scale, onHitboxUpdate]);
+
   useFrame(() => {
     if (isSwinging) {
       let newProgress = swingProgress + swingSpeed;
@@ -49,7 +85,6 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
       }
       setSwingProgress(newProgress);
 
-      // startRotationからendRotationへ線形補間
       const interpolatedRotation = new Euler(
         startRotation.x + (endRotation.x - startRotation.x) * newProgress,
         startRotation.y + (endRotation.y - startRotation.y) * newProgress,
@@ -59,7 +94,7 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
 
       if (newProgress >= 1) {
         setTimeout(() => {
-          setRotation(startRotation); // 開始角度に戻す
+          setRotation(startRotation);
           setSwingProgress(0);
         }, 150);
       }
@@ -69,5 +104,4 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
   return <Bat {...props} rotation={rotation} />;
 });
 
-// displayNameを設定してデバッグしやすくする
 BatController.displayName = 'BatController';

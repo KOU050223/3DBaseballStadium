@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Vector3, Euler } from 'three';
 import { Ball } from './Ball';
 import { useBattingMachine } from '@/hooks/game/useBattingMachine';
+import { useCollisionManager, BatHitbox } from '@/hooks/game/useCollisionManager';
 
 export interface BattingMachineProps {
   position?: Vector3;
@@ -14,6 +15,7 @@ export interface BattingMachineProps {
   launchAngle?: number;
   autoStart?: boolean;
   debugMode?: boolean;
+  batHitbox?: BatHitbox;
 }
 
 export const BattingMachine: React.FC<BattingMachineProps> = ({
@@ -23,7 +25,8 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
   ballSpeed = 15,
   launchAngle = -10,
   autoStart = true,
-  debugMode = false
+  debugMode = false,
+  batHitbox
 }) => {
   const { balls, controls } = useBattingMachine({
     position,
@@ -34,12 +37,35 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
     autoStart
   });
 
+  const { checkBallBatCollision } = useCollisionManager();
+
   useFrame((state) => {
     const launcher = controls.getLauncher();
     if (launcher) {
       launcher.update(state.clock.elapsedTime * 1000);
     }
   });
+
+  // ボールの当たり判定をチェックする関数
+  const handleBallHit = (ballId: string, position: Vector3, velocity: Vector3): Vector3 | null => {
+    if (!batHitbox) return null;
+
+    const tempBallProps = {
+      id: ballId,
+      initialPosition: position,
+      velocity: velocity,
+      onRemove: () => {}
+    };
+
+    const collision = checkBallBatCollision(tempBallProps, batHitbox);
+    
+    if (collision.hit && collision.newVelocity) {
+      console.log(`Ball ${ballId} hit the bat!`);
+      return collision.newVelocity;
+    }
+    
+    return null;
+  };
 
   return (
     <>
@@ -56,9 +82,21 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
         </mesh>
       </group>
 
-      {/* ボールをレンダリング */}
+      {/* バットのヒットボックスをデバッグ表示 */}
+      {debugMode && batHitbox && (
+        <mesh position={batHitbox.center}>
+          <boxGeometry args={[batHitbox.size.x, batHitbox.size.y, batHitbox.size.z]} />
+          <meshBasicMaterial color="red" opacity={0.3} transparent />
+        </mesh>
+      )}
+
+      {/* ボールをレンダリング（当たり判定付き） */}
       {Array.from(balls.values()).map(ballProps => (
-        <Ball key={ballProps.id} {...ballProps} />
+        <Ball 
+          key={ballProps.id} 
+          {...ballProps} 
+          onHit={handleBallHit}
+        />
       ))}
     </>
   );
