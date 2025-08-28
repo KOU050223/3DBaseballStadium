@@ -9,22 +9,20 @@ interface UseGLBLoaderProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   onLoad?: () => void;
-  onError?: (error: Error) => void;
 }
 
-export const useGLBLoader = ({ 
-  modelPath, 
+export const useGLBLoader = ({
+  modelPath,
   scale = [1, 1, 1],
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  onLoad, 
-  onError 
+  onLoad
 }: UseGLBLoaderProps) => {
   console.log('useGLBLoader called with modelPath:', modelPath);
-  
+
   // useGLTFは非同期でモデルをロードし、エラー時は例外を投げる
   // ErrorBoundaryとSuspenseでハンドリングされる
-  const glb = useGLTF(modelPath);  useEffect(() => {
+  const glb = useGLTF(modelPath); useEffect(() => {
     if (glb && glb.scene) {
       // 基本的なトランスフォーム設定
       glb.scene.scale.set(scale[0], scale[1], scale[2]);
@@ -37,5 +35,5 @@ export const useGLBLoader = ({
     }
   }, [glb, scale, position, rotation, onLoad, modelPath]);
 
-    return glb?.scene ?? null;
+  return glb?.scene ?? null;
 };

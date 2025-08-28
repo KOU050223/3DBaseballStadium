@@ -7,4 +7,5 @@ export interface BallProps {
     onRemove: (id: string) => void;
     color?: string;
     radius?: number;
+    onHit?: (ballId: string, position: Vector3, velocity: Vector3) => Vector3 | null;
 }

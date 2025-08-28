@@ -17,16 +17,14 @@ export const GLBModel: React.FC<GLBModelProps> = ({
   scale,
   position,
   rotation,
-  onLoad,
-  onError
+  onLoad
 }) => {
   const glb = useGLBLoader({
     modelPath,
     scale,
     position,
     rotation,
-    onLoad,
-    onError
+    onLoad
   });
 
   if (!glb) return null;

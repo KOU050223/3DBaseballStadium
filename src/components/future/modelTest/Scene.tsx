@@ -6,25 +6,37 @@ import { Suspense, useState, useRef } from 'react';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
-import { BatController } from '@/components/common/3DComponent/BatController';
+import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
+import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
+import { BatHitbox } from '@/hooks/game/useCollisionManager';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
-import { BattingMachine } from '@/components/common/3DComponent/BattingMachine'
 
 interface SceneProps {
   debugMode?: boolean;
 }
 
 export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
-  const [stadiumScale, setStadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
-  const [stadiumPosition, setStadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
-  const [stadiumRotation, setStadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
+  const [stadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
+  const [stadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
+  const [stadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
+  const [currentBatHitbox, setCurrentBatHitbox] = useState<BatHitbox>({
+    center: batPosition.clone(),
+    size: new Vector3(0.1, 1.2, 0.1)
+  });
+
+  const batRef = useRef<BatControllerRef>(null);
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
   const endRotation = new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180);
+
+  // バットのヒットボックス更新時の処理
+  const handleBatHitboxUpdate = (hitbox: BatHitbox) => {
+    setCurrentBatHitbox(hitbox);
+  };
 
   return (
     <div className="w-full h-full relative">
@@ -47,12 +59,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               onLoad={() => console.log('Stadium loaded')}
             />
             <BatController
+              ref={batRef}
               position={batPosition}
               scale={batScale}
               startRotation={startRotation}
               endRotation={endRotation}
               modelPath="/models/BaseballBat.glb"
               onLoad={() => console.log('Bat loaded')}
+              onHitboxUpdate={handleBatHitboxUpdate}
             />
             
             {/* バッティングマシーンとボール */}
@@ -60,10 +74,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               position={new Vector3(0, 2, 23)}
               rotation={new Euler(0, Math.PI, 0)}
               launchInterval={2.0}
-              ballSpeed={20}
+              ballSpeed={60}
               launchAngle={-2}
               autoStart={true}
               debugMode={debugMode}
+              batHitbox={currentBatHitbox}
             />
           </Suspense>
         </ErrorBoundary>
@@ -74,6 +89,23 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           <div className="flex justify-between items-center mb-2">
             <span className="font-bold">統合シーンデバッグ</span>
           </div>
+          
+          <div className="mb-4">
+            <div className="text-red-300 mb-2 font-semibold">当たり判定</div>
+            <div className="text-xs text-gray-300">
+              <div>バット中心: ({currentBatHitbox.center.x.toFixed(1)}, {currentBatHitbox.center.y.toFixed(1)}, {currentBatHitbox.center.z.toFixed(1)})</div>
+              <div>バットサイズ: ({currentBatHitbox.size.x.toFixed(1)}, {currentBatHitbox.size.y.toFixed(1)}, {currentBatHitbox.size.z.toFixed(1)})</div>
+              <div>スイング中: {batRef.current?.isSwinging() ? 'Yes' : 'No'}</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-yellow-300 mb-2 font-semibold">操作</div>
+            <div className="text-xs text-gray-300">
+              <div>スペースキー: バットスイング</div>
+            </div>
+          </div>
+          
           <div className="mb-4">
             <div className="text-blue-300 mb-2 font-semibold">バット</div>
             <div className="mb-2">
