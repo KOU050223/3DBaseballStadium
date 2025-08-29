@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import FileInputComponent from "react-file-input-previews-base64";
-
 interface ModelItem {
   name: string;
   path: string; // base64 文字列 or URL
@@ -91,42 +89,31 @@ const ModelSelectPage: React.FC = () => {
     localStorage.setItem("selectedModel", JSON.stringify(selectedModel));
     alert(`選択したモデル: ${selectedModel.name}`);
   }
-  type FileWithBase64 = {
-  name: string;
-  type: string;
-  size: number;
-  base64: string;
-  file: File;
-};
+  const FileLoad=(e: React.ChangeEvent<HTMLInputElement>)=>{
+          if(!e.target.files)return;
+          const file = e.target.files[0];
+          if(!file)return;
+          const reader=new FileReader();
+          reader.onload=()=>{
+            const base64=reader.result as string;
+            const newModel:ModelItem={name:file.name,path:base64};
+            setModels((prev)=>[...prev,newModel]);
+            setSelectedModel(newModel);
+          };
+          reader.readAsDataURL(file);
+          console.log(file);
+        };
+
   return (
     <div style={{ textAlign: "center", padding: "20px",alignSelf:"center" }}>
       <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>モデル選択画面</h1>
-        <FileInputComponent 
-        labelText="モデルを選ぶ"
-        labelStyle={{ color: "black", fontSize: 20, fontWeight: "bold" }}
-        buttonComponent={
-          <div
-            style={{
-              width: 200,
-              height: 50,
-              backgroundColor: "blue",
-              color: "white",
-              lineHeight: "50px",
-            }}
-          >
-            ファイルを選ぶ
-          </div>
-        }
-        accept=".glb"
-        callbackFunction={(fileArr: FileWithBase64[]) => {
-          const file = fileArr[0];
-          setModels((prev) => [
-            { name: file.name, path: file.base64 },
-            ...prev,
-          ]);
-          setSelectedModel({ name: file.name, path: file.base64 });
-        }}
-      />
+      <div style={{marginBottom:"10px",border:"1px solid gray",}}>
+        <input type="file" 
+        accept='.gltf,.glb'
+        onChange={FileLoad}
+        >
+      </input>
+      </div>
       {/* モデル表示用 */}
       <div
         onClick={SelectedModel}
