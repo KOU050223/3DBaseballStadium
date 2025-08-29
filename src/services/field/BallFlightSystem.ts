@@ -18,7 +18,7 @@ export class BallFlightSystem {
     this.distanceJudgment = new DistanceBasedJudgment(playerPosition);
     this.config = {
       enableTrajectoryLogging: false,
-      groundLevel: -1,
+      groundLevel: 1,
       maxTrackingTime: 10,
       minVelocityThreshold: 0.1,
       useDistanceBasedJudgment: true,

@@ -23,7 +23,7 @@ export class RapierFieldZoneSystem {
   
   private landingThreshold = {
     velocityY: 0.5,    // Y方向の速度閾値（上昇→下降の転換点）
-    groundLevel: -1,   // 地面レベル
+    groundLevel: 1,   // 地面レベル（新しい床に合わせて調整）
     minHeight: 0.5,    // 最小高度（地面近く）
     maxTrackingTime: 15000, // 最大追跡時間（ミリ秒）
   };
