@@ -49,11 +49,9 @@ export const Ball = ({
   const hasCollidedWithTarget = useRef(false); // Add this line
   const [isBatCollisionCooldown, setIsBatCollisionCooldown] = useState(false);
   const batCollisionCooldownTimer = useRef<NodeJS.Timeout | null>(null);
-
   const handleCollision = (payload: CollisionEnterPayload) => {
-    const collidedObjectName = payload.other.rigidBodyObject?.name;
-
-    if (collidedObjectName === 'bat') {
+    // Check if the ball collided with the bat
+    if (payload.other.rigidBodyObject?.name === 'bat') {
       console.log('Ball hit the bat!');
       if (isBatCollisionCooldown) {
         console.log('Ignoring bat collision due to cooldown.');
