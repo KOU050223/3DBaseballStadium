@@ -7,7 +7,7 @@ import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
-import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
+import { BattingMachine, BattingMachineRef } from '@/components/common/3DComponent/BattingMachine'; // Import BattingMachineRef
 import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 import { Scoreboard } from '@/components/game/Scoreboard';
@@ -28,8 +28,9 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [gravityScale, setGravityScale] = useState<number>(0);
 
   const batRef = useRef<BatControllerRef>(null);
+  const battingMachineRef = useRef<BattingMachineRef>(null); // Create ref for BattingMachine
 
-  // キーボード操作でバットの位置を調整
+  // キーボード操作でバットの位置を調整し、ボールを射出
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -48,6 +49,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           
           return new Vector3(clampedX, currentPosition.y, currentPosition.z);
         });
+      } else if (event.key === 'e' || event.key === 'E') { // Add 'E' key listener
+        battingMachineRef.current?.launchBall();
       }
     };
 
@@ -56,7 +59,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, []); // Add battingMachineRef to dependency array if it changes, but it's a ref so it won't.
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
@@ -101,12 +104,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               
               {/* バッティングマシーンとボール */}
               <BattingMachine
+                ref={battingMachineRef} // Pass ref to BattingMachine
                 position={new Vector3(0, 2, 23)}
                 rotation={new Euler(0, Math.PI, 0)}
-                launchInterval={2.0}
                 ballSpeed={ballSpeed}
                 launchAngle={-2}
-                autoStart={true}
                 debugMode={debugMode}
                 gravityScale={gravityScale}
               />
@@ -133,6 +135,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             <div className="text-xs text-gray-300">
               <div>スペースキー: バットスイング</div>
               <div>左右矢印キー: バット左右移動</div>
+              <div>Eキー: ボール射出</div> {/* Add E key instruction */}
             </div>
           </div>
           
