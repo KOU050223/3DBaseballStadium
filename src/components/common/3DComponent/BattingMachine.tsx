@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Vector3, Euler } from 'three';
 import { Ball, BallProps } from './Ball';
+import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 export interface BattingMachineProps {
   position?: Vector3;
@@ -13,6 +14,7 @@ export interface BattingMachineProps {
   autoStart?: boolean;
   gravityScale?: number;
   debugMode?: boolean;
+  onJudgment?: (result: HitJudgmentResult) => void;
 }
 
 // Use a type that omits onRemove as it's handled internally
@@ -26,6 +28,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
   launchAngle = 0,
   autoStart = true,
   gravityScale = 1.5,
+  onJudgment,
 }) => {
   const [balls, setBalls] = useState<BallState[]>([]);
 
@@ -84,6 +87,7 @@ export const BattingMachine: React.FC<BattingMachineProps> = ({
           key={ballProps.id} 
           {...ballProps} 
           onRemove={handleRemoveBall}
+          onJudgment={onJudgment}
         />
       ))}
     </>

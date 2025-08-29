@@ -17,7 +17,7 @@ export interface BatControllerRef {
 }
 
 export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
-  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale: batVisualScale = 1 } = props;
+  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale } = props;
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingProgress, setSwingProgress] = useState(0);
   const rigidBodyRef = useRef<RapierRigidBody>(null);
@@ -94,7 +94,7 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
           {...props} 
           rotation={new Euler(0, 0, 0)} // 回転はRigidBodyで制御するのでリセット
           position={new Vector3(0, 1.3, 0)}
-        scale={batVisualScale} // batVisualScaleを明示的に渡す
+        scale={scale} // scaleを明示的に渡す
         />
       </MeshCollider>
     </RigidBody>
