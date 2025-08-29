@@ -35,9 +35,8 @@ export default function SettingsPage() {
   // 初期化時に接続済みか確認
   useEffect(() => {
     const checkJoycon = async () => {
-      // @ts-ignore
-      const devices = await navigator.hid.getDevices();
-      const joycon = devices.find((d: any) => d.vendorId === 0x057e);
+  const devices: HIDDevice[] = await navigator.hid.getDevices();
+  const joycon = devices.find((d: HIDDevice) => d.vendorId === 0x057e);
       if (joycon && joycon.opened) {
         setJoyconStatus('接続済み');
       } else {
@@ -51,8 +50,7 @@ export default function SettingsPage() {
     try {
       // Joy-Con(R) のみフィルタ
       const filters = [{ vendorId: 0x057e, productId: 0x2007 }];
-      // @ts-ignore
-      const devices = await navigator.hid.requestDevice({ filters });
+  const devices: HIDDevice[] = await navigator.hid.requestDevice({ filters });
       console.log('[JoyCon] requestDevice result:', devices);
       if (devices && devices.length > 0) {
         const device = devices[0];
