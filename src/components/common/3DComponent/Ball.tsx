@@ -75,7 +75,7 @@ export const Ball = ({
 
         // Apply velocity change
         const currentVelocity = rigidBodyRef.current.linvel();
-        let newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+        const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
 
         if (collidedObjectName === 'bat') {
           // Reverse Y-component and apply multiplier
