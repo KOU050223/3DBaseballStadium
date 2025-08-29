@@ -36,8 +36,7 @@ export const Ball: React.FC<BallProps> = ({
   // Rapierベースのフィールドゾーン管理システム
   const { 
     startTracking, 
-    stopTracking,
-    getTrackingInfo
+    stopTracking
   } = useRapierFieldZoneManager();
 
   useEffect(() => {

@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
 import { FieldZone } from './FieldZone';
-import { FieldZoneDebugInfo } from './FieldZone';
 import { FieldZone as FieldZoneType } from '@/types/field/fieldZone';
 import { FIELD_COORDINATES } from '@/constants/field/FieldZoneDefinitions';
 
@@ -22,14 +21,14 @@ interface StadiumFieldVisualizerProps {
  */
 export const StadiumFieldVisualizer = ({
   visible = true,
-  showDebugInfo = false,
+  showDebugInfo: _showDebugInfo = false,
   wireframe = false,
   opacity = 0.3,
   filterByType,
   animated = false
 }: StadiumFieldVisualizerProps) => {
-  const { getAllZones, isDebugMode, toggleDebugMode } = useFieldZoneManager();
-  const [hoveredZone, setHoveredZone] = useState<FieldZoneType | null>(null);
+  const { getAllZones, isDebugMode } = useFieldZoneManager();
+  const [_hoveredZone, setHoveredZone] = useState<FieldZoneType | null>(null);
   const [selectedZone, setSelectedZone] = useState<FieldZoneType | null>(null);
 
   // 全ゾーンの取得とフィルタリング
@@ -44,7 +43,7 @@ export const StadiumFieldVisualizer = ({
   }, [getAllZones, filterByType]);
 
   // 統計情報の計算
-  const statistics = useMemo(() => {
+  const _statistics = useMemo(() => {
     const typeCount = zones.reduce((acc, zone) => {
       acc[zone.judgmentType] = (acc[zone.judgmentType] || 0) + 1;
       return acc;
@@ -53,12 +52,13 @@ export const StadiumFieldVisualizer = ({
     return {
       totalZones: zones.length,
       typeCount,
-      visibleZones: zones.filter(zone => visible).length
+      visibleZones: zones.filter(() => visible).length
     };
   }, [zones, visible]);
 
   const handleZoneHover = (zone: FieldZoneType | null) => {
     setHoveredZone(zone);
+    // 将来的にホバー効果やデバッグ情報表示に使用
   };
 
   const handleZoneClick = (zone: FieldZoneType) => {

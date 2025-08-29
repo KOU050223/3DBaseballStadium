@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { FieldZone, FieldMapConfig, SpatialGrid, BoundingBox } from '@/types/field/fieldZone';
+import { FieldZone, FieldMapConfig, SpatialGrid } from '@/types/field/fieldZone';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 import { createFieldZoneMap, FIELD_BOUNDS } from '@/constants/field/FieldZoneDefinitions';
 

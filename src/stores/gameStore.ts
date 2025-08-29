@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { GameState, CountState, TeamState, InningState, PlayResult, RunnerState, HitType, RunnerAdvancement } from '@/types/game/gameState';
+import { GameState, PlayResult, HitType, RunnerAdvancement } from '@/types/game/gameState';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 interface GameStore extends GameState {
@@ -109,7 +109,7 @@ export const useGameStore = create<GameStore>()(
         // 3アウトでイニング終了
         get().nextInning();
       } else {
-        set((state) => ({
+        set(() => ({
           count: { strikes: 0, balls: 0, outs: newOuts }
         }));
       }
@@ -302,15 +302,15 @@ export const useGameStore = create<GameStore>()(
       
       if (inning.isTop) {
         // 表から裏へ
-        set((state) => ({
-          inning: { ...state.inning, isTop: false },
+        set(() => ({
+          inning: { current: inning.current, isTop: false },
           currentBatter: 'home',
           count: { strikes: 0, balls: 0, outs: 0 }
         }));
       } else {
         // 裏から次のイニングの表へ
-        set((state) => ({
-          inning: { current: state.inning.current + 1, isTop: true },
+        set(() => ({
+          inning: { current: inning.current + 1, isTop: true },
           currentBatter: 'away',
           count: { strikes: 0, balls: 0, outs: 0 }
         }));
@@ -318,7 +318,7 @@ export const useGameStore = create<GameStore>()(
     },
     
     setInning: (inning, isTop) => {
-      set((state) => ({
+      set(() => ({
         inning: { current: inning, isTop },
         currentBatter: isTop ? 'away' : 'home',
         count: { strikes: 0, balls: 0, outs: 0 }
@@ -391,7 +391,8 @@ export const useGameStore = create<GameStore>()(
       console.log(`⚾ Field Judgment: ${result.judgmentType} in zone ${result.zoneId}`, {
         position: result.position,
         distance: result.metadata?.distance?.toFixed(1) + 'm',
-        height: result.metadata?.height?.toFixed(1) + 'm'
+        height: result.metadata?.height?.toFixed(1) + 'm',
+        batter: currentBatter
       });
       
       // 判定タイプに基づいてPlayResultに変換して処理

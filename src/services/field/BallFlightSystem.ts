@@ -88,7 +88,7 @@ export class BallFlightSystem {
   /**
    * 落下判定の条件チェック
    */
-  private shouldConsiderLanded(trajectory: BallTrajectory, deltaTime: number): boolean {
+  private shouldConsiderLanded(trajectory: BallTrajectory, _deltaTime: number): boolean {
     const pos = trajectory.currentPosition;
     const vel = trajectory.velocity;
 

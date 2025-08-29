@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { RigidBody, CuboidCollider, CollisionEnterPayload } from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 import { FieldZone as FieldZoneType } from '@/types/field/fieldZone';
 import { useRapierFieldZoneManager } from '@/hooks/field/useRapierFieldZoneManager';
 
@@ -50,7 +51,7 @@ export const RapierFieldZone = ({
     
     const time = state.clock.getElapsedTime();
     // 軽微な浮遊アニメーション
-    const mesh = meshRef.current as any;
+    const mesh = meshRef.current as THREE.Mesh;
     mesh.position.y = position[1] + Math.sin(time * 0.8 + zone.priority) * 0.2;
     
     // ボールがゾーンに入っている場合の強調効果
@@ -72,7 +73,7 @@ export const RapierFieldZone = ({
   };
 
   // ボールがゾーンから出た時の処理
-  const handleCollisionExit = (payload: any) => {
+  const handleCollisionExit = (payload: CollisionEnterPayload) => {
     const otherBody = payload.other.rigidBodyObject;
     
     if (otherBody?.name === 'ball') {

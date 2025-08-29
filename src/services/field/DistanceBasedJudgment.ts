@@ -35,7 +35,7 @@ export class DistanceBasedJudgment {
    */
   public judgeByDistance(
     ballLandingPosition: Vector3,
-    ballVelocity?: Vector3
+    _ballVelocity?: Vector3
   ): HitJudgmentResult {
     // 水平距離を計算（Y軸は除外）
     const horizontalDistance = this.calculateHorizontalDistance(ballLandingPosition);
