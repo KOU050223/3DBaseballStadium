@@ -1,4 +1,3 @@
-
 'use client';
 // Joy-Conに標準入力レポートモード(0x30)を設定
 const enableJoyconStandardInputReport = async (device: HIDDevice) => {
@@ -72,25 +71,24 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 	const [stadiumPosition] = useState<Vector3>(MODEL_CONFIG.STADIUM.position);
 	const [stadiumRotation] = useState<Euler>(MODEL_CONFIG.STADIUM.rotation);
 
-	const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
-	const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
-	const [ballSpeed, setBallSpeed] = useState<number>(60);
-	const [gravityScale, setGravityScale] = useState<number>(1.5);
+	const [batScale] = useState<number>(MODEL_CONFIG.BAT.scale);
+	const [batPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
+	const [ballSpeed] = useState<number>(60);
+	const [gravityScale] = useState<number>(1.5);
 
 	const batRef = useRef<BatControllerRef>(null);
 
 	// ジョイコン加速度でバットを振る
 
 	// ジョイコンデバイス・リスナー管理
-	const joyconDeviceRef = useRef<any>(null);
-	const joyconListenerRef = useRef<any>({ prevDataRef: { current: null }, prevAButtonRef: { current: false }, listener: null });
+	const joyconDeviceRef = useRef<HIDDevice | null>(null);
+	const joyconListenerRef = useRef<{ prevDataRef: { current: Uint8Array | null }, prevAButtonRef: { current: boolean }, listener: ((event: HIDInputReportEvent) => void) | null }>({ prevDataRef: { current: null }, prevAButtonRef: { current: false }, listener: null });
 
 	// 初期化時に既存のJoy-Con (R)があれば自動でopenしinputreport登録
 	useEffect(() => {
 		const connectExistingJoycon = async () => {
-			// @ts-ignore
-			const devices = await navigator.hid.getDevices();
-			const device = devices.find((d: any) => d.vendorId === JOYCON_VENDOR_ID && d.productId === JOYCON_R_PRODUCT_ID);
+			const devices: HIDDevice[] = await navigator.hid.getDevices();
+			const device = devices.find((d: HIDDevice) => d.vendorId === JOYCON_VENDOR_ID && d.productId === JOYCON_R_PRODUCT_ID);
 			if (device) {
 				try {
 					if (!device.opened) {
@@ -109,30 +107,16 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 					joyconDeviceRef.current = device;
 					const prevDataRef = joyconListenerRef.current.prevDataRef;
 					const prevAButtonRef = joyconListenerRef.current.prevAButtonRef;
-					const listener = (event: any) => {
+					const listener = (event: HIDInputReportEvent) => {
 						const data = new Uint8Array(event.data.buffer);
-						const prev = prevDataRef.current;
-						if (prev) {
-							let diff = [];
-							for (let i = 0; i < data.length; i++) {
-								if (data[i] !== prev[i]) {
-									diff.push(`data[${i}]: ${prev[i]} -> ${data[i]}`);
-								}
-							}
-							if (diff.length > 0) {
-								console.log('[JoyCon][inputreport] diff:', diff, 'data:', data);
-							}
-						}
 						prevDataRef.current = data;
 						// Aボタンの押下立ち上がりでバットを振る
 						const aPressed = ((data[2] & 0x08) !== 0) || ((data[3] & 0x08) !== 0);
-						let swung = false;
 						if (aPressed && !prevAButtonRef.current) {
 							batRef.current?.triggerSwing();
-							swung = true;
 						}
 						prevAButtonRef.current = aPressed;
-												// Aボタンでバットを振る処理のみ残す
+						// Aボタンでバットを振る処理のみ残す
 					};
 					device.addEventListener('inputreport', listener);
 					joyconListenerRef.current.listener = listener;
@@ -143,9 +127,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 		};
 		connectExistingJoycon();
 		// クリーンアップ: ページ離脱時にリスナー解除
+		const deviceForCleanup = joyconDeviceRef.current;
+		const listenerForCleanup = joyconListenerRef.current.listener;
 		return () => {
-			if (joyconDeviceRef.current && joyconListenerRef.current.listener) {
-				joyconDeviceRef.current.removeEventListener('inputreport', joyconListenerRef.current.listener);
+			if (deviceForCleanup && listenerForCleanup) {
+				deviceForCleanup.removeEventListener('inputreport', listenerForCleanup);
 			}
 		};
 	}, []);
