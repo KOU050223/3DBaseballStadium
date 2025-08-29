@@ -27,6 +27,7 @@ export const BattingMachine = forwardRef<BattingMachineRef, BattingMachineProps>
   ballSpeed = 0.01,
   launchAngle = 0,
   gravityScale = 1.5,
+  onJudgment,
 }, ref) => {
   const [balls, setBalls] = useState<BallState[]>([]);
 
