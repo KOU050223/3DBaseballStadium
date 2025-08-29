@@ -9,7 +9,7 @@ import { PlayResult } from '@/types/game/gameState';
  */
 export class DistanceBasedJudgment {
   private playerPosition: Vector3;
-  
+
   // 飛距離による判定基準（メートル）
   private static readonly DISTANCE_THRESHOLDS = {
     GROUND_OUT: 25,      // ゴロアウト
@@ -35,15 +35,14 @@ export class DistanceBasedJudgment {
    * 球の着地点から飛距離を計算し、判定を行う
    */
   public judgeByDistance(
-    ballLandingPosition: Vector3,
-    _ballVelocity?: Vector3
+    ballLandingPosition: Vector3
   ): HitJudgmentResult {
     // 水平距離を計算（Y軸は除外）
     const horizontalDistance = this.calculateHorizontalDistance(ballLandingPosition);
-    
+
     // 高さも考慮した実際の距離
     const actualDistance = this.playerPosition.distanceTo(ballLandingPosition);
-    
+
     // ファウル判定（X軸の符号で左右ファウルを判定）
     if (this.isFoulTerritory(ballLandingPosition)) {
       const foulResult = {
@@ -73,7 +72,7 @@ export class DistanceBasedJudgment {
 
     // 飛距離による判定
     const judgmentType = this.getJudgmentByDistance(horizontalDistance, ballLandingPosition.y);
-    
+
     const result = {
       judgmentType: judgmentType as PlayResult,
       zoneId: `distance-${judgmentType}`,
@@ -117,16 +116,16 @@ export class DistanceBasedJudgment {
     if (Math.abs(ballPosition.x) > 40) {
       return true;
     }
-    
+
     // 後方（Z < 0）はファウル
     if (ballPosition.z < 0) {
       return true;
     }
-    
+
     // フェアテリトリー内の左右端判定（角度による）
     const angle = Math.atan2(ballPosition.x, ballPosition.z);
     const maxAngle = Math.PI / 4; // 45度
-    
+
     return Math.abs(angle) > maxAngle;
   }
 
@@ -137,18 +136,18 @@ export class DistanceBasedJudgment {
     if (Math.abs(ballPosition.x) > 40) {
       return ballPosition.x > 0 ? '右側ファウルライン越え' : '左側ファウルライン越え';
     }
-    
+
     if (ballPosition.z < 0) {
       return 'バックスクリーン方向';
     }
-    
+
     const angle = Math.atan2(ballPosition.x, ballPosition.z);
     const maxAngle = Math.PI / 4;
-    
+
     if (Math.abs(angle) > maxAngle) {
       return angle > 0 ? '右ファウル角度' : '左ファウル角度';
     }
-    
+
     return '不明';
   }
 

@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// HIDDevice の簡易型定義
+interface HIDDeviceInfo {
+  vendorId: number;
+  productId: number;
+  productName?: string;
+  opened: boolean;
+  open(): Promise<void>;
+  close(): Promise<void>;
+}
+
 export default function SettingsPage() {
   const [controlType, setControlType] = useState<'space' | 'joycon'>('space');
 
@@ -35,8 +45,8 @@ export default function SettingsPage() {
   // 初期化時に接続済みか確認
   useEffect(() => {
     const checkJoycon = async () => {
-  const devices: HIDDevice[] = await navigator.hid.getDevices();
-  const joycon = devices.find((d: HIDDevice) => d.vendorId === 0x057e);
+      const devices: HIDDeviceInfo[] = await navigator.hid.getDevices();
+      const joycon = devices.find((d: HIDDeviceInfo) => d.vendorId === 0x057e);
       if (joycon && joycon.opened) {
         setJoyconStatus('接続済み');
       } else {
@@ -50,7 +60,7 @@ export default function SettingsPage() {
     try {
       // Joy-Con(R) のみフィルタ
       const filters = [{ vendorId: 0x057e, productId: 0x2007 }];
-  const devices: HIDDevice[] = await navigator.hid.requestDevice({ filters });
+      const devices: HIDDeviceInfo[] = await navigator.hid.requestDevice({ filters });
       console.log('[JoyCon] requestDevice result:', devices);
       if (devices && devices.length > 0) {
         const device = devices[0];

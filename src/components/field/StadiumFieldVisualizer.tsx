@@ -22,14 +22,12 @@ interface StadiumFieldVisualizerProps {
  */
 export const StadiumFieldVisualizer = ({
   visible = true,
-  showDebugInfo: _showDebugInfo = false,
   wireframe = false,
   opacity = 0.3,
   filterByType,
   animated = false
 }: StadiumFieldVisualizerProps) => {
   const { getAllZones, isDebugMode } = useFieldZoneManager();
-  const [_hoveredZone, setHoveredZone] = useState<FieldZoneType | null>(null);
   const [selectedZone, setSelectedZone] = useState<FieldZoneType | null>(null);
 
   // 全ゾーンの取得とフィルタリング
@@ -43,24 +41,9 @@ export const StadiumFieldVisualizer = ({
     );
   }, [getAllZones, filterByType]);
 
-  // 統計情報の計算
-  const _statistics = useMemo(() => {
-    const typeCount = zones.reduce((acc, zone) => {
-      acc[zone.judgmentType] = (acc[zone.judgmentType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      totalZones: zones.length,
-      typeCount,
-      visibleZones: zones.filter(() => visible).length
-    };
-  }, [zones, visible]);
-
-  const handleZoneHover = (zone: FieldZoneType | null) => {
-    setHoveredZone(zone);
-    // 将来的にホバー効果やデバッグ情報表示に使用
-  };
+  // const handleZoneHover = (zone: FieldZoneType | null) => {
+  //   // 将来的にホバー効果やデバッグ情報表示に使用
+  // };
 
   const handleZoneClick = (zone: FieldZoneType) => {
     setSelectedZone(selectedZone?.id === zone.id ? null : zone);
@@ -79,7 +62,6 @@ export const StadiumFieldVisualizer = ({
           opacity={selectedZone?.id === zone.id ? opacity * 2 : opacity}
           wireframe={wireframe}
           animated={animated}
-          onHover={handleZoneHover}
           onClick={handleZoneClick}
         />
       ))}

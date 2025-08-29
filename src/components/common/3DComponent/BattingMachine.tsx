@@ -15,6 +15,8 @@ export interface BattingMachineProps {
   launchAngle?: number;
   gravityScale?: number;
   debugMode?: boolean;
+  launchInterval?: number;
+  autoStart?: boolean;
   onJudgment?: (result: HitJudgmentResult) => void;
 }
 
@@ -27,6 +29,8 @@ export const BattingMachine = forwardRef<BattingMachineRef, BattingMachineProps>
   ballSpeed = 0.01,
   launchAngle = 0,
   gravityScale = 1.5,
+  launchInterval = 2.0,
+  autoStart = false,
   onJudgment,
 }, ref) => {
   const [balls, setBalls] = useState<BallState[]>([]);
@@ -58,6 +62,17 @@ export const BattingMachine = forwardRef<BattingMachineRef, BattingMachineProps>
     launchBall,
   }));
 
+  // 自動発射機能
+  useEffect(() => {
+    if (!autoStart) return;
+
+    const interval = setInterval(() => {
+      launchBall();
+    }, launchInterval * 1000);
+
+    return () => clearInterval(interval);
+  }, [autoStart, launchInterval, launchBall]);
+
   const handleRemoveBall = useCallback((id: string) => {
     setBalls(prevBalls => prevBalls.filter(ball => ball.id !== id));
   }, []);
@@ -88,3 +103,5 @@ export const BattingMachine = forwardRef<BattingMachineRef, BattingMachineProps>
     </>
   );
 });
+
+BattingMachine.displayName = 'BattingMachine';

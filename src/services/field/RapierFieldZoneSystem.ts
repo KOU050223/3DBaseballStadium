@@ -20,7 +20,7 @@ export class RapierFieldZoneSystem {
     lastPosition: Vector3;
     landingCallback?: (result: HitJudgmentResult) => void;
   }> = new Map();
-  
+
   private landingThreshold = {
     velocityY: 0.5,    // Y方向の速度閾値（上昇→下降の転換点）
     groundLevel: 1,   // 地面レベル（新しい床に合わせて調整）
@@ -38,12 +38,12 @@ export class RapierFieldZoneSystem {
    * ボールの追跡開始（RigidBody参照を保持）
    */
   public startTracking(
-    ballId: string, 
+    ballId: string,
     rigidBody: RapierRigidBody,
     landingCallback?: (result: HitJudgmentResult) => void
   ): void {
     const position = rigidBody.translation();
-    
+
     this.trackedBalls.set(ballId, {
       rigidBody,
       hasLanded: false,
@@ -63,7 +63,7 @@ export class RapierFieldZoneSystem {
       const currentTime = Date.now();
       const position = tracker.rigidBody.translation();
       const velocity = tracker.rigidBody.linvel();
-      
+
       const currentPosition = new Vector3(position.x, position.y, position.z);
       const currentVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
 
@@ -87,8 +87,8 @@ export class RapierFieldZoneSystem {
    * 落下判定の条件チェック（Rapierの物理特性を活用）
    */
   private shouldConsiderLanded(
-    position: Vector3, 
-    velocity: Vector3, 
+    position: Vector3,
+    velocity: Vector3,
     lastPosition: Vector3
   ): boolean {
     // 地面レベルに到達
@@ -97,9 +97,9 @@ export class RapierFieldZoneSystem {
     }
 
     // Y方向の速度が下向きで、低高度かつ速度が小さい
-    if (velocity.y < -this.landingThreshold.velocityY && 
-        position.y < this.landingThreshold.minHeight && 
-        position.y > this.landingThreshold.groundLevel) {
+    if (velocity.y < -this.landingThreshold.velocityY &&
+      position.y < this.landingThreshold.minHeight &&
+      position.y > this.landingThreshold.groundLevel) {
       return true;
     }
 
@@ -121,14 +121,14 @@ export class RapierFieldZoneSystem {
    */
   private processBallLanding(ballId: string, position: Vector3, velocity: Vector3): void {
     const tracker = this.trackedBalls.get(ballId);
-    
+
     if (!tracker) return;
 
     let judgmentResult: HitJudgmentResult;
 
     if (this.useDistanceBasedJudgment) {
       // 距離ベース判定を使用
-      judgmentResult = this.distanceJudgment.judgeByDistance(position, velocity);
+      judgmentResult = this.distanceJudgment.judgeByDistance(position);
     } else {
       // 従来のゾーンベース判定を使用
       const zone = this.getZoneAtPosition(position);
@@ -143,7 +143,7 @@ export class RapierFieldZoneSystem {
           velocity: velocity.clone()
         }
       };
-      
+
       // 従来システムのログ出力
       console.log(`⚾ Rapier Ball Landing: ${judgmentResult.judgmentType} in ${judgmentResult.zoneId}`, {
         position: `(${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`,
@@ -163,13 +163,13 @@ export class RapierFieldZoneSystem {
     // 優先度順でチェック
     const sortedZones = Array.from(this.zones.values())
       .sort((a, b) => b.priority - a.priority);
-    
+
     for (const zone of sortedZones) {
       if (this.isPositionInZone(position, zone)) {
         return zone;
       }
     }
-    
+
     return null;
   }
 
@@ -179,8 +179,8 @@ export class RapierFieldZoneSystem {
   private isPositionInZone(position: Vector3, zone: FieldZone): boolean {
     const { min, max } = zone.boundingBox;
     return position.x >= min.x && position.x <= max.x &&
-           position.y >= min.y && position.y <= max.y &&
-           position.z >= min.z && position.z <= max.z;
+      position.y >= min.y && position.y <= max.y &&
+      position.z >= min.z && position.z <= max.z;
   }
 
   /**
