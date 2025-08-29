@@ -5,7 +5,6 @@ import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import { Vector3, Euler } from 'three';
-import * as THREE from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
@@ -228,8 +227,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   ref={batRef}
                   position={batPosition}
                   scale={batScale}
-                  startRotation={new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180)}
-                  endRotation={new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180)}
+                                    startRotation={startRotation}
+                  endRotation={endRotation}
                   modelPath="/models/BaseballBat.glb"
                   onLoad={() => console.log('Bat loaded')}
                 />

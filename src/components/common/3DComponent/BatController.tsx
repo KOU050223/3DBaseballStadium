@@ -23,7 +23,7 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
   const [swingProgress, setSwingProgress] = useState(0);
   const rigidBodyRef = useRef<RapierRigidBody>(null);
 
-  const swingSpeed = 0.1;
+  const swingSpeed = 0.08;
 
   // refで外部からアクセス可能なメソッドを定義
   useImperativeHandle(ref, () => ({
@@ -96,6 +96,7 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
           {...props} 
           rotation={new Euler(0, 0, 0)} // 回転はRigidBodyで制御するのでリセット
           position={new Vector3(0, 1.3, 0)}
+        scale={batVisualScale} // batVisualScaleを明示的に渡す
         />
       </MeshCollider>
     </RigidBody>
