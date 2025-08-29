@@ -65,46 +65,72 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       <Canvas
         camera={{ position: [0, 1.5, -4]}}
       >
-        <OrbitControls target={[0, 1.5, 0]} />
-        <Environment preset="sunset" />
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        
-        <ErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            <Physics debug={debugMode}>
-              <BaseballStadium 
-                debugMode={debugMode}
-                position={stadiumPosition}
-                rotation={stadiumRotation}
-                scale={stadiumScale}
-                modelPath="/models/BaseballStadium.glb"
-                onLoad={() => console.log('Stadium loaded')}
-              />
-              <BatController
-                ref={batRef}
-                position={batPosition}
-                scale={batScale}
-                startRotation={startRotation}
-                endRotation={endRotation}
-                modelPath="/models/BaseballBat.glb"
-                onLoad={() => console.log('Bat loaded')}
-              />
-              
-              {/* バッティングマシーンとボール */}
-              <BattingMachine
-                position={new Vector3(0, 2, 23)}
-                rotation={new Euler(0, Math.PI, 0)}
-                launchInterval={2.0}
-                ballSpeed={ballSpeed}
-                launchAngle={-2}
-                autoStart={true}
-                debugMode={debugMode}
-                gravityScale={gravityScale}
-              />
-            </Physics>
-          </Suspense>
-        </ErrorBoundary>
+        <XR store={store}>
+          {/* 非XR時のカメラコントロール */}
+          <OrbitControls 
+            target={[0, 1, 0]} 
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+          />
+          
+          {/* 照明設定 - Meta Quest 3に最適化 */}
+          <ambientLight intensity={0.6} />
+          <directionalLight 
+            position={[10, 10, 5]} 
+            intensity={1} 
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+          />
+          <pointLight position={[-10, -10, -5]} intensity={0.5} />
+          
+          {/* 環境マップ */}
+          <Environment preset="sunset" background />
+          
+          {/* スタジアム、バット、バッティングマシーン */}
+          <ErrorBoundary fallback={null}>
+            <Suspense fallback={
+              <mesh position={[0, 0, 0]}>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="gray" />
+              </mesh>
+            }>
+              <Physics debug={debugMode}>
+                <BaseballStadium 
+                  debugMode={debugMode}
+                  position={stadiumPosition}
+                  rotation={stadiumRotation}
+                  scale={stadiumScale}
+                  modelPath="/models/BaseballStadium.glb"
+                  onLoad={() => console.log('Stadium loaded successfully')}
+                  onError={(error) => console.error('Stadium load error:', error)}
+                />
+                <BatController
+                  ref={batRef}
+                  position={batPosition}
+                  scale={batScale}
+                                    startRotation={startRotation}
+                  endRotation={endRotation}
+                  modelPath="/models/BaseballBat.glb"
+                  onLoad={() => console.log('Bat loaded')}
+                />
+                
+                {/* バッティングマシーンとボール */}
+                <BattingMachine
+                  position={new Vector3(0, 2, 23)}
+                  rotation={new Euler(0, Math.PI, 0)}
+                  launchInterval={2.0}
+                  ballSpeed={ballSpeed}
+                  launchAngle={-2}
+                  autoStart={true}
+                  debugMode={debugMode}
+                  gravityScale={gravityScale}
+                />
+              </Physics>
+            </Suspense>
+          </ErrorBoundary>
+        </XR>
       </Canvas>
 
       {debugMode && (
