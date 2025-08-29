@@ -3,11 +3,30 @@
 // Joy-Conに標準入力レポートモード(0x30)を設定
 const enableJoyconStandardInputReport = async (device: HIDDevice) => {
 	try {
+		if (!device.opened) {
+			await device.open();
+		}
 		// IMU有効化
-		await device.sendReport(0x01, new Uint8Array([0x40, 0x01, 0x01]));
+		try {
+			await device.sendReport(0x01, new Uint8Array([0x40, 0x01, 0x01]));
+		} catch (e) {
+			if (e instanceof DOMException && e.name === 'InvalidStateError') {
+				console.warn('sendReport(IMU enable) skipped: device state changing');
+			} else {
+				throw e;
+			}
+		}
 		await new Promise((res) => setTimeout(res, 100));
 		// 標準入力レポートモード(0x30)有効化
-		await device.sendReport(0x01, new Uint8Array([0x03, 0x30]));
+		try {
+			await device.sendReport(0x01, new Uint8Array([0x03, 0x30]));
+		} catch (e) {
+			if (e instanceof DOMException && e.name === 'InvalidStateError') {
+				console.warn('sendReport(0x30) skipped: device state changing');
+			} else {
+				throw e;
+			}
+		}
 		await new Promise((res) => setTimeout(res, 100));
 		console.log('[JoyCon] IMU有効化+標準入力レポートモード(0x30)を送信しました');
 	} catch (e) {
@@ -65,7 +84,18 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 			const device = devices.find((d: any) => d.vendorId === JOYCON_VENDOR_ID && d.productId === JOYCON_R_PRODUCT_ID);
 			if (device) {
 				try {
-					if (!device.opened) await device.open();
+					if (!device.opened) {
+						try {
+							await device.open();
+						} catch (e) {
+							// すでにopen中やopen済みの場合は握りつぶす
+							if (e instanceof DOMException && e.name === 'InvalidStateError') {
+								console.warn('Joy-Con is already opening/opened. Skipping open.');
+							} else {
+								throw e;
+							}
+						}
+					}
 					await enableJoyconStandardInputReport(device);
 					joyconDeviceRef.current = device;
 					const prevDataRef = joyconListenerRef.current.prevDataRef;
