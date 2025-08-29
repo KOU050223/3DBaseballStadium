@@ -4,7 +4,16 @@
 const enableJoyconStandardInputReport = async (device: HIDDevice) => {
 	try {
 		if (!device.opened) {
-			await device.open();
+			try {
+				await device.open();
+				await new Promise(res => setTimeout(res, 100)); // open直後は少し待つ
+			} catch (e) {
+				if (e instanceof DOMException && e.name === 'InvalidStateError') {
+					console.warn('Joy-Con is already opening/opened. Skipping open.');
+				} else {
+					throw e;
+				}
+			}
 		}
 		// IMU有効化
 		try {
