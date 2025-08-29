@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Vector3 } from 'three';
 import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
 import { useGLBLoader } from '@/hooks/useGLBLoader';
@@ -18,16 +18,16 @@ export interface BallProps {
   enableFieldZoneTracking?: boolean;
 }
 
-export const Ball: React.FC<BallProps> = ({
+export const Ball = ({
   id,
   initialPosition,
   initialVelocity,
   onRemove,
-  radius = 10.0, // Realistic baseball radius
+  radius = 5.0, // Realistic baseball radius
   gravityScale = 1.5,
   onJudgment,
   enableFieldZoneTracking = true
-}) => {
+}: BallProps) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' });
   const hasBeenHitRef = useRef<boolean>(false);
@@ -56,36 +56,64 @@ export const Ball: React.FC<BallProps> = ({
       if (enableFieldZoneTracking && isTrackingRef.current) {
         stopTracking(id);
       }
+      if (batCollisionCooldownTimer.current) {
+        clearTimeout(batCollisionCooldownTimer.current);
+      }
     };
   }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking]);
 
-  const handleCollision = (payload: CollisionEnterPayload) => {
-    // Check if the ball collided with the bat
-    if (payload.other.rigidBodyObject?.name === 'bat') {
-      console.log('Ball hit the bat!');
-      hasBeenHitRef.current = true;
-      
-      // バット接触時の処理（必要に応じて速度調整等）
-      if (rigidBodyRef.current) {
-        // より強い打撃力を適用（例）
-        const hitVelocity = new Vector3(
-          (Math.random() - 0.5) * 40, // -20 to 20
-          Math.random() * 30 + 10,    // 10 to 40
-          Math.random() * 60 + 20     // 20 to 80
-        );
-        rigidBodyRef.current.setLinvel(hitVelocity, true);
+  const hasCollidedWithTarget = useRef(false); // Add this line
+  const [isBatCollisionCooldown, setIsBatCollisionCooldown] = useState(false);
+  const batCollisionCooldownTimer = useRef<NodeJS.Timeout | null>(null);
 
-        // Rapierベースのフィールドゾーン追跡を開始
-        if (enableFieldZoneTracking && !isTrackingRef.current) {
-          startTracking(id, rigidBodyRef.current, (result) => {
-            onJudgment?.(result);
-            // 判定完了後はボールを削除
-            setTimeout(() => {
-              onRemove(id);
-            }, 1500);
-          });
-          isTrackingRef.current = true;
-        }
+  const handleCollision = (payload: CollisionEnterPayload) => {
+    const collidedObjectName = payload.other.rigidBodyObject?.name;
+
+    if (collidedObjectName === 'bat') {
+      console.log('Ball hit the bat!');
+      
+      if (isBatCollisionCooldown) {
+        console.log('Ignoring bat collision due to cooldown.');
+        return; // Ignore collision if in cooldown
+      }
+      
+      hasBeenHitRef.current = true;
+
+      // Apply velocity change
+      const currentVelocity = rigidBodyRef.current.linvel();
+      const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+
+      // Reverse Y-component and apply multiplier for bat collision
+      const velocityMultiplier = 7.0;
+      newVelocity.y = Math.abs(currentVelocity.y) * velocityMultiplier;
+      newVelocity.x *= velocityMultiplier;
+      newVelocity.z *= velocityMultiplier;
+      rigidBodyRef.current.setLinvel(newVelocity, true);
+
+      // Apply gravity increase
+      const gravityIncrease = 1.5;
+      rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
+
+      // Start cooldown for bat collision
+      setIsBatCollisionCooldown(true);
+      if (batCollisionCooldownTimer.current) {
+        clearTimeout(batCollisionCooldownTimer.current);
+      }
+      batCollisionCooldownTimer.current = setTimeout(() => {
+        setIsBatCollisionCooldown(false);
+        batCollisionCooldownTimer.current = null;
+      }, 100);
+
+      // Rapierベースのフィールドゾーン追跡を開始
+      if (enableFieldZoneTracking && !isTrackingRef.current) {
+        startTracking(id, rigidBodyRef.current, (result) => {
+          onJudgment?.(result);
+          // 判定完了後はボールを削除
+          setTimeout(() => {
+            onRemove(id);
+          }, 1500);
+        });
+        isTrackingRef.current = true;
       }
     }
   };
@@ -100,7 +128,7 @@ export const Ball: React.FC<BallProps> = ({
       onCollisionEnter={handleCollision}
       gravityScale={gravityScale}
     >
-      <BallCollider args={[radius * 0.05]} />
+      <BallCollider args={[radius * 0.1]} />
       {glbScene ? (
         <primitive 
           object={glbScene.clone()} // glbSceneを直接レンダリング

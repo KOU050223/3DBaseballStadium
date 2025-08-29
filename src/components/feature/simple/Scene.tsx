@@ -76,7 +76,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
-  const endRotation = new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180);
+  const endRotation = new Euler(-160 * Math.PI / 180, 0, 95 * Math.PI / 180);
 
   return (
     <div className="w-full h-full relative">
