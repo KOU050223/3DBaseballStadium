@@ -13,6 +13,8 @@ import { MODEL_CONFIG } from '@/constants/ModelPosition';
 import { Scoreboard } from '@/components/game/Scoreboard';
 import { GameControls } from '@/components/game/GameControls';
 import { RapierStadiumFieldVisualizer } from '@/components/field/RapierFieldZone';
+import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
+import { useGameActions } from '@/stores/gameStore';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -30,6 +32,10 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [showFieldZones, setShowFieldZones] = useState<boolean>(true);
 
   const batRef = useRef<BatControllerRef>(null);
+
+  // フィールドゾーンマネージャーとゲームストアの統合
+  const fieldZoneManager = useFieldZoneManager();
+  const { processFieldJudgment } = useGameActions();
 
   // キーボード操作でバットの位置を調整
   useEffect(() => {
@@ -59,6 +65,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // バット位置変更時にプレイヤー座標を更新
+  useEffect(() => {
+    fieldZoneManager.updatePlayerPosition(batPosition);
+  }, [batPosition, fieldZoneManager]);
+
+  // バット位置が変更された時はuseRapierFieldZoneManagerも更新する必要がある
+  // 現在はBallコンポーネントから直接コールバックを受け取るようにした
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
@@ -98,7 +112,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 startRotation={startRotation}
                 endRotation={endRotation}
                 modelPath="/models/BaseballBat.glb"
-                onLoad={() => console.log('Bat loaded')}
               />
               
               {/* バッティングマシーンとボール */}
@@ -111,6 +124,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 autoStart={true}
                 debugMode={debugMode}
                 gravityScale={gravityScale}
+                onJudgment={(result) => {
+                  console.log(`⚾ Distance-based judgment: ${result.judgmentType}`, {
+                    distance: `${result.metadata?.distance?.toFixed(1)}m`,
+                    height: `${result.metadata?.height?.toFixed(1)}m`,
+                    position: result.position
+                  });
+                  processFieldJudgment(result);
+                }}
               />
 
               {/* フィールドゾーン表示 */}
