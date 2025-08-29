@@ -16,7 +16,6 @@ export interface XRBattingMachineProps {
   getBatVelocity?: () => Vector3;
 }
 
-// Use a type that omits onRemove as it's handled internally
 type XRBallState = Omit<XRBallProps, 'onRemove'>;
 
 export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
@@ -37,18 +36,17 @@ export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
 
     const launchBall = () => {
       const newBallId = `xr_ball_${Date.now()}`;
+    
+      //ランダム変動を小さくする場合
+      // const angleVariation = (Math.random() - 0.5) * 5; 
+      // const speedVariation = ballSpeed + (Math.random() - 0.5) * ballSpeed * 0.2; 
+      const finalAngle = launchAngle;
       
-      // More varied launch parameters for XR experience
-      const angleVariation = (Math.random() - 0.5) * 5; // ±2.5 degrees variation
-      const speedVariation = ballSpeed + (Math.random() - 0.5) * ballSpeed * 0.2; // ±10% speed variation
-      const finalAngle = launchAngle + angleVariation;
-      
-      // Calculate initial velocity based on speed and angle
       const angleInRadians = (finalAngle * Math.PI) / 180;
       const initialVelocity = new Vector3(
-        (Math.random() - 0.5) * speedVariation * 0.1, // Small horizontal variation
-        speedVariation * Math.sin(angleInRadians),
-        speedVariation * Math.cos(angleInRadians)
+        0, // (Math.random() - 0.5) * speedVariation * 0.1, 
+        ballSpeed * Math.sin(angleInRadians),
+        ballSpeed * Math.cos(angleInRadians) 
       );
       
       // Apply the machine's rotation to the velocity
@@ -56,11 +54,12 @@ export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
 
       const newBall: XRBallState = {
         id: newBallId,
-        initialPosition: position.clone().add(new Vector3(
-          (Math.random() - 0.5) * 0.2, // Small position variation
-          0,
-          0
-        )),
+        initialPosition: position.clone(), 
+        // initialPosition: position.clone().add(new Vector3(
+        //   (Math.random() - 0.5) * 0.2, 
+        //   0,
+        //   0
+        // )),
         initialVelocity: initialVelocity,
         gravityScale: gravityScale,
       };
@@ -72,7 +71,7 @@ export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
           id: newBallId,
           velocity: initialVelocity,
           angle: finalAngle,
-          speed: speedVariation
+          speed: ballSpeed 
         });
       }
     };
