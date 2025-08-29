@@ -17,13 +17,15 @@ export class FieldZoneManager {
     onBallLanding?: (ballId: string, position: Vector3, judgmentType: string) => void;
   } = {};
 
-  constructor() {
+  constructor(playerPosition?: Vector3) {
     this.stadiumMap = new StadiumFieldMap();
-    this.ballFlightSystem = new BallFlightSystem(this.stadiumMap, {
+    const defaultPlayerPosition = playerPosition || new Vector3(1.6, 1.4, 0); // デフォルトはバット位置
+    this.ballFlightSystem = new BallFlightSystem(this.stadiumMap, defaultPlayerPosition, {
       enableTrajectoryLogging: false, // パフォーマンス重視でデフォルトはoff
       groundLevel: -1,
       maxTrackingTime: 15, // 15秒で追跡タイムアウト
-      minVelocityThreshold: 0.5
+      minVelocityThreshold: 0.5,
+      useDistanceBasedJudgment: true // 飛距離ベース判定を有効化
     });
   }
 
@@ -105,6 +107,14 @@ export class FieldZoneManager {
    */
   public removeBall(ballId: string): boolean {
     return this.ballFlightSystem.removeBall(ballId);
+  }
+
+  /**
+   * プレイヤー座標の更新
+   * バット位置が変更された時に呼び出し
+   */
+  public updatePlayerPosition(newPosition: Vector3): void {
+    this.ballFlightSystem.updatePlayerPosition(newPosition);
   }
 
   /**
@@ -215,9 +225,9 @@ let globalFieldZoneManager: FieldZoneManager | null = null;
  * グローバルなFieldZoneManagerインスタンスを取得
  * アプリケーション全体で単一のインスタンスを共有したい場合に使用
  */
-export function getFieldZoneManager(): FieldZoneManager {
+export function getFieldZoneManager(playerPosition?: Vector3): FieldZoneManager {
   if (!globalFieldZoneManager) {
-    globalFieldZoneManager = new FieldZoneManager();
+    globalFieldZoneManager = new FieldZoneManager(playerPosition);
   }
   return globalFieldZoneManager;
 }

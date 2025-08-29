@@ -3,6 +3,7 @@ import { RapierRigidBody } from '@react-three/rapier';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 import { FieldZone } from '@/types/field/fieldZone';
 import { createFieldZoneMap } from '@/constants/field/FieldZoneDefinitions';
+import { DistanceBasedJudgment } from './DistanceBasedJudgment';
 
 /**
  * Rapier物理エンジンベースのフィールドゾーン判定システム
@@ -10,6 +11,8 @@ import { createFieldZoneMap } from '@/constants/field/FieldZoneDefinitions';
  */
 export class RapierFieldZoneSystem {
   private zones: Map<string, FieldZone>;
+  private distanceJudgment: DistanceBasedJudgment;
+  private useDistanceBasedJudgment: boolean = true;
   private trackedBalls: Map<string, {
     rigidBody: RapierRigidBody;
     hasLanded: boolean;
@@ -25,8 +28,10 @@ export class RapierFieldZoneSystem {
     maxTrackingTime: 15000, // 最大追跡時間（ミリ秒）
   };
 
-  constructor() {
+  constructor(playerPosition?: Vector3) {
     this.zones = createFieldZoneMap();
+    const defaultPlayerPosition = playerPosition || new Vector3(1.6, 1.4, 0);
+    this.distanceJudgment = new DistanceBasedJudgment(defaultPlayerPosition);
   }
 
   /**
@@ -115,33 +120,41 @@ export class RapierFieldZoneSystem {
    * ボール落下時の処理
    */
   private processBallLanding(ballId: string, position: Vector3, velocity: Vector3): void {
-    const zone = this.getZoneAtPosition(position);
     const tracker = this.trackedBalls.get(ballId);
     
     if (!tracker) return;
 
-    const judgmentResult: HitJudgmentResult = {
-      judgmentType: zone?.judgmentType || 'foul',
-      position: position.clone(),
-      zoneId: zone?.id || 'out-of-bounds',
-      timestamp: Date.now(),
-      metadata: {
-        distance: position.length(),
-        height: position.y,
-        velocity: velocity.clone(),
-        landingSpeed: velocity.length()
-      }
-    };
+    let judgmentResult: HitJudgmentResult;
+
+    if (this.useDistanceBasedJudgment) {
+      // 距離ベース判定を使用
+      judgmentResult = this.distanceJudgment.judgeByDistance(position, velocity);
+    } else {
+      // 従来のゾーンベース判定を使用
+      const zone = this.getZoneAtPosition(position);
+      judgmentResult = {
+        judgmentType: zone?.judgmentType || 'foul',
+        position: position.clone(),
+        zoneId: zone?.id || 'out-of-bounds',
+        timestamp: Date.now(),
+        metadata: {
+          distance: position.length(),
+          height: position.y,
+          velocity: velocity.clone(),
+          landingSpeed: velocity.length()
+        }
+      };
+      
+      // 従来システムのログ出力
+      console.log(`⚾ Rapier Ball Landing: ${judgmentResult.judgmentType} in ${judgmentResult.zoneId}`, {
+        position: `(${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`,
+        velocity: velocity.length().toFixed(1),
+        distance: position.length().toFixed(1)
+      });
+    }
 
     // コールバック実行
     tracker.landingCallback?.(judgmentResult);
-    
-    // ログ出力
-    console.log(`⚾ Rapier Ball Landing: ${judgmentResult.judgmentType} in ${judgmentResult.zoneId}`, {
-      position: `(${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`,
-      velocity: velocity.length().toFixed(1),
-      distance: position.length().toFixed(1)
-    });
   }
 
   /**
@@ -202,6 +215,20 @@ export class RapierFieldZoneSystem {
    */
   public getAllZones(): Map<string, FieldZone> {
     return new Map(this.zones);
+  }
+
+  /**
+   * プレイヤー座標の更新
+   */
+  public updatePlayerPosition(newPosition: Vector3): void {
+    this.distanceJudgment.updatePlayerPosition(newPosition);
+  }
+
+  /**
+   * 判定方式の切り替え
+   */
+  public setUseDistanceBasedJudgment(use: boolean): void {
+    this.useDistanceBasedJudgment = use;
   }
 
   /**

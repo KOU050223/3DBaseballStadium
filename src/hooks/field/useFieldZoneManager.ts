@@ -72,6 +72,11 @@ export const useFieldZoneManager = () => {
     return managerRef.current?.removeBall(ballId) || false;
   }, []);
 
+  // プレイヤー座標更新
+  const updatePlayerPosition = useCallback((position: Vector3) => {
+    managerRef.current?.updatePlayerPosition(position);
+  }, []);
+
   // デバッグモード切り替え
   const toggleDebugMode = useCallback(() => {
     const newMode = !isDebugMode;
@@ -116,6 +121,7 @@ export const useFieldZoneManager = () => {
     getZoneAtPosition,
     stopTracking,
     removeBall,
+    updatePlayerPosition,
 
     // ゾーン管理
     addCustomZone,

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RapierRigidBody } from '@react-three/rapier';
+import { Vector3 } from 'three';
 import { RapierFieldZoneSystem } from '@/services/field/RapierFieldZoneSystem';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 import { FieldZone } from '@/types/field/fieldZone';
@@ -17,7 +18,8 @@ export const useRapierFieldZoneManager = () => {
   // システムの初期化
   useEffect(() => {
     if (!systemRef.current) {
-      systemRef.current = new RapierFieldZoneSystem();
+      const defaultPlayerPosition = new Vector3(1.6, 1.4, 0); // デフォルトバット位置
+      systemRef.current = new RapierFieldZoneSystem(defaultPlayerPosition);
     }
 
     return () => {
@@ -77,6 +79,20 @@ export const useRapierFieldZoneManager = () => {
   }, []);
 
   /**
+   * プレイヤー座標の更新
+   */
+  const updatePlayerPosition = useCallback((position: Vector3) => {
+    systemRef.current?.updatePlayerPosition(position);
+  }, []);
+
+  /**
+   * 判定方式の切り替え
+   */
+  const setUseDistanceBasedJudgment = useCallback((use: boolean) => {
+    systemRef.current?.setUseDistanceBasedJudgment(use);
+  }, []);
+
+  /**
    * 統計情報の取得
    */
   const getStatistics = useCallback(() => {
@@ -102,6 +118,8 @@ export const useRapierFieldZoneManager = () => {
     stopTracking,
     getTrackingInfo,
     getAllZones,
+    updatePlayerPosition,
+    setUseDistanceBasedJudgment,
 
     // 設定・統計
     updateLandingThreshold,
