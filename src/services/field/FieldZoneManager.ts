@@ -206,8 +206,8 @@ export class FieldZoneManager {
    * 設定の一括更新
    */
   public updateSettings(settings: {
-    fieldMapConfig?: Parameters<typeof StadiumFieldMap.prototype.constructor>[0];
-    ballFlightConfig?: Parameters<typeof BallFlightSystem.prototype.updateConfig>[0];
+    fieldMapConfig?: Record<string, unknown>; // StadiumFieldMapの設定型
+    ballFlightConfig?: Record<string, unknown>; // BallFlightSystemの設定型
   }): void {
     if (settings.ballFlightConfig) {
       this.ballFlightSystem.updateConfig(settings.ballFlightConfig);

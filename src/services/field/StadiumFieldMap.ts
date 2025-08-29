@@ -207,7 +207,7 @@ export class StadiumFieldMap {
    */
   public getDebugInfo(): {
     config: FieldMapConfig;
-    statistics: ReturnType<typeof this.getStatistics>;
+    statistics: ReturnType<StadiumFieldMap['getStatistics']>;
     zoneList: Array<{id: string, priority: number, judgmentType: string}>;
   } {
     const zoneList = Array.from(this.zones.values()).map(zone => ({

@@ -140,8 +140,7 @@ export class RapierFieldZoneSystem {
         metadata: {
           distance: position.length(),
           height: position.y,
-          velocity: velocity.clone(),
-          landingSpeed: velocity.length()
+          velocity: velocity.clone()
         }
       };
       

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import * as THREE from 'three';
 import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
 import { FieldZone } from './FieldZone';
 import { FieldZone as FieldZoneType } from '@/types/field/fieldZone';
@@ -184,7 +185,7 @@ export const FieldZoneStatsHUD = () => {
       </div>
 
       {/* パフォーマンス統計 */}
-      {isDebugMode && (
+      {isDebugMode && performanceStats && (
         <div className="mb-3">
           <h4 className="font-semibold mb-1">Performance:</h4>
           <div className="text-xs">

@@ -265,7 +265,7 @@ export class BallFlightSystem {
    */
   public getDebugInfo(): {
     config: HitJudgmentConfig;
-    statistics: ReturnType<typeof this.getStatistics>;
+    statistics: ReturnType<BallFlightSystem['getStatistics']>;
     activeBalls: Array<{
       id: string;
       position: Vector3;

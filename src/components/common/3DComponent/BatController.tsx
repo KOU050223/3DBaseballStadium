@@ -17,7 +17,7 @@ export interface BatControllerRef {
 }
 
 export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
-  const { startRotation, endRotation, position = new Vector3(0, 0, 0) } = props;
+  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale } = props;
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingProgress, setSwingProgress] = useState(0);
   const rigidBodyRef = useRef<RapierRigidBody>(null);
