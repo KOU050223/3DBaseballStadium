@@ -3,7 +3,7 @@
 import React, { useState, forwardRef, useImperativeHandle, useEffect, useCallback, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Vector3, Euler, Quaternion } from 'three';
-import { RigidBody, MeshCollider, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, MeshCollider, RapierRigidBody, CuboidCollider } from '@react-three/rapier';
 import { useXR, useXRInputSourceState, useXRInputSourceEvent } from '@react-three/xr';
 import { Bat, BatProps } from '@/components/common/3DComponent/Bat';
 
@@ -156,8 +156,8 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
         controller.getWorldPosition(controllerPosition);
         controller.getWorldQuaternion(controllerQuaternion);
         
-        // バットをコントローラーの位置に配置（オフセット付き）
-        const batOffset = new Vector3(0, -0.1, -0.3);
+        // バットをコントローラーの位置に配置（調整されたオフセット）
+        const batOffset = new Vector3(0, -0.2, -0.4); 
         batOffset.applyQuaternion(controllerQuaternion);
         const batPosition = controllerPosition.clone().add(batOffset);
         
@@ -177,23 +177,28 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
           setSwingProgress(newProgress);
           
           const swingQuat = new Quaternion().copy(startQuat).slerp(endQuat, newProgress);
-          const combinedQuat = controllerQuaternion.clone().multiply(swingQuat);
+          // バットの向きを調整するための回転オフセット
+          const batOrientationOffset = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
+          const combinedQuat = controllerQuaternion.clone().multiply(batOrientationOffset).multiply(swingQuat);
           batRotationRef.current.copy(combinedQuat);
           rigidBodyRef.current.setNextKinematicRotation(combinedQuat);
           
           if (newProgress >= 1) {
             setTimeout(() => {
               if (rigidBodyRef.current && vrMode) {
-                batRotationRef.current.copy(controllerQuaternion);
-                rigidBodyRef.current.setNextKinematicRotation(controllerQuaternion);
+                const resetQuat = controllerQuaternion.clone().multiply(batOrientationOffset);
+                batRotationRef.current.copy(resetQuat);
+                rigidBodyRef.current.setNextKinematicRotation(resetQuat);
               }
               setSwingProgress(0);
             }, 150);
           }
         } else {
-          // スイング中でないときはコントローラーの回転をそのまま使用
-          batRotationRef.current.copy(controllerQuaternion);
-          rigidBodyRef.current.setNextKinematicRotation(controllerQuaternion);
+          // スイング中でないときはコントローラーの回転にオフセットを適用
+          const batOrientationOffset = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
+          const adjustedQuat = controllerQuaternion.clone().multiply(batOrientationOffset);
+          batRotationRef.current.copy(adjustedQuat);
+          rigidBodyRef.current.setNextKinematicRotation(adjustedQuat);
         }
       } catch (error) {
         console.error('Enhanced  VR controller tracking error:', error);
@@ -242,40 +247,55 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
       colliders={false}
       name="bat" // 名前を統一
     >
-      {/* より単純なコライダーを使用 */}
-      <MeshCollider type="trimesh">
-        <Bat 
-          {...props} 
-          rotation={new Euler(0, 0, 0)}
-          position={vrMode ? new Vector3(0, 0, 0) : new Vector3(0, 1.3, 0)}
-          scale={batVisualScale}
-        />
-        
-        {/* デバッグ用のバット当たり判定可視化 */}
-        {vrMode && (
-          <mesh position={[0, 0, 0]} visible={false}>
-            <boxGeometry args={[0.1, 0.1, 1.0]} />
-            <meshStandardMaterial color="#ff0000" wireframe />
+      {/* VRモードでは直接CuboidCollider、非VRモードではtrimeshコライダーを使用 */}
+      {vrMode ? (
+        // VRモード：CuboidColliderを直接使用
+        <group>
+          {/* バット全体をカバーするCuboidCollider */}
+          <CuboidCollider args={[0.04, 0.4, 0.04]} position={[0, 0, 0]} />
+          
+          {/* ビジュアルのバット */}
+          <Bat 
+            {...props} 
+            rotation={new Euler(0, 0, 0)}
+            position={new Vector3(0, 0, 0)}
+            scale={batVisualScale}
+          />
+          
+          {/* デバッグ用のバット当たり判定可視化 */}
+          <mesh position={[0, 0, 0]} visible={true}>
+            <boxGeometry args={[0.08, 0.8, 0.08]} />
+            <meshStandardMaterial color="#ff0000" wireframe transparent opacity={0.3} />
           </mesh>
-        )}
-        
-        {/* VRモード時のデバッグ表示 */}
-        {vrMode && rightControllerState && (
-          <>
-            {/* Controller tracking indicator */}
-            <mesh position={[0, 0, 0.1]}>
-              <boxGeometry args={[0.05, 0.03, 0.1]} />
-              <meshStandardMaterial color="#00ff00" transparent opacity={0.7} />
-            </mesh>
-            
-            {/* Velocity indicator */}
-            <mesh position={[0, 0, 0.2]}>
-              <boxGeometry args={[0.02, 0.02, Math.min(currentVelocity.current.length() * 0.01, 0.3)]} />
-              <meshStandardMaterial color="#ffff00" transparent opacity={0.8} />
-            </mesh>
-          </>
-        )}
-      </MeshCollider>
+        </group>
+      ) : (
+        // 非VRモード：従来のtrimeshコライダー
+        <MeshCollider type="trimesh">
+          <Bat 
+            {...props} 
+            rotation={new Euler(0, 0, 0)}
+            position={new Vector3(0, 1.3, 0)}
+            scale={batVisualScale}
+          />
+        </MeshCollider>
+      )}
+      
+      {/* VRモード時のデバッグ表示 */}
+      {vrMode && rightControllerState && (
+        <>
+          {/* Controller tracking indicator */}
+          <mesh position={[0, 0, 0.1]}>
+            <boxGeometry args={[0.05, 0.03, 0.1]} />
+            <meshStandardMaterial color="#00ff00" transparent opacity={0.7} />
+          </mesh>
+          
+          {/* Velocity indicator */}
+          <mesh position={[0, 0, 0.2]}>
+            <boxGeometry args={[0.02, 0.02, Math.min(currentVelocity.current.length() * 0.01, 0.3)]} />
+            <meshStandardMaterial color="#ffff00" transparent opacity={0.8} />
+          </mesh>
+        </>
+      )}
     </RigidBody>
   );
 });

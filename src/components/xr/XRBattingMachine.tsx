@@ -19,10 +19,10 @@ export interface XRBattingMachineProps {
 type XRBallState = Omit<XRBallProps, 'onRemove'>;
 
 export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
-  position = new Vector3(0, 2, 13),
+  position = new Vector3(0, 2, -5), // より近い位置に変更
   rotation = new Euler(0, Math.PI, 0),
   launchInterval = 3.0,
-  ballSpeed = 0.01,
+  ballSpeed = 60, // デフォルト値を適切な速度に変更
   launchAngle = 0,
   autoStart = true,
   gravityScale = 1.5,
@@ -66,12 +66,22 @@ export const XRBattingMachine: React.FC<XRBattingMachineProps> = ({
 
       setBalls(prevBalls => [...prevBalls, newBall]);
       
+      // 常にデバッグ情報を出力（一時的）
+      console.log('XR Ball launched:', {
+        id: newBallId,
+        velocity: initialVelocity,
+        velocityMagnitude: initialVelocity.length(),
+        angle: finalAngle,
+        speed: ballSpeed,
+        position: position,
+        ballsCount: balls.length + 1
+      });
+      
       if (debugMode) {
-        console.log('XR Ball launched:', {
-          id: newBallId,
-          velocity: initialVelocity,
-          angle: finalAngle,
-          speed: ballSpeed 
+        console.log('Debug mode - additional info:', {
+          autoStart,
+          launchInterval,
+          rotation
         });
       }
     };
