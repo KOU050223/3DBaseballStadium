@@ -240,15 +240,24 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
       ref={rigidBodyRef}
       type="kinematicPosition"
       colliders={false}
-      name="enhanced-bat"
+      name="bat" // 名前を統一
     >
-      <MeshCollider type="hull">
+      {/* より単純なコライダーを使用 */}
+      <MeshCollider type="trimesh">
         <Bat 
           {...props} 
           rotation={new Euler(0, 0, 0)}
           position={vrMode ? new Vector3(0, 0, 0) : new Vector3(0, 1.3, 0)}
           scale={batVisualScale}
         />
+        
+        {/* デバッグ用のバット当たり判定可視化 */}
+        {vrMode && (
+          <mesh position={[0, 0, 0]} visible={false}>
+            <boxGeometry args={[0.1, 0.1, 1.0]} />
+            <meshStandardMaterial color="#ff0000" wireframe />
+          </mesh>
+        )}
         
         {/* VRモード時のデバッグ表示 */}
         {vrMode && rightControllerState && (
