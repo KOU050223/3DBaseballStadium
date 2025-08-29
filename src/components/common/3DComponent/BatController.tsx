@@ -14,6 +14,7 @@ interface BatControllerProps extends Omit<BatProps, 'rotation'> {
 
 export interface BatControllerRef {
   isSwinging: () => boolean;
+  triggerSwing: () => void;
 }
 
 export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
@@ -26,7 +27,8 @@ export const BatController = forwardRef<BatControllerRef, BatControllerProps>((p
 
   // refで外部からアクセス可能なメソッドを定義
   useImperativeHandle(ref, () => ({
-    isSwinging: () => isSwinging
+    isSwinging: () => isSwinging,
+    triggerSwing,
   }));
 
   const triggerSwing = useCallback(() => {
