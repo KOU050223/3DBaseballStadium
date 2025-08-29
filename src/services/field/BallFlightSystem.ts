@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
 import { BallTrajectory, HitJudgmentResult, HitJudgmentConfig } from '@/types/field/hitJudgment';
 import { StadiumFieldMap } from './StadiumFieldMap';
+import { DistanceBasedJudgment } from './DistanceBasedJudgment';
 
 /**
  * ボール軌道追跡と落下判定システム
@@ -10,14 +11,17 @@ export class BallFlightSystem {
   private trackedBalls: Map<string, BallTrajectory> = new Map();
   private stadiumMap: StadiumFieldMap;
   private config: HitJudgmentConfig;
+  private distanceJudgment: DistanceBasedJudgment;
 
-  constructor(stadiumMap: StadiumFieldMap, config?: Partial<HitJudgmentConfig>) {
+  constructor(stadiumMap: StadiumFieldMap, playerPosition: Vector3, config?: Partial<HitJudgmentConfig>) {
     this.stadiumMap = stadiumMap;
+    this.distanceJudgment = new DistanceBasedJudgment(playerPosition);
     this.config = {
       enableTrajectoryLogging: false,
       groundLevel: -1,
       maxTrackingTime: 10,
       minVelocityThreshold: 0.1,
+      useDistanceBasedJudgment: true,
       ...config
     };
   }
@@ -126,14 +130,25 @@ export class BallFlightSystem {
     trajectory.hasLanded = true;
     trajectory.isTracking = false;
 
-    // フィールドマップで判定実行
-    const judgmentResult = this.stadiumMap.evaluateBallLanding(
-      trajectory.currentPosition,
-      {
-        velocity: trajectory.velocity,
-        ballId: trajectory.id
-      }
-    );
+    let judgmentResult: HitJudgmentResult | null = null;
+
+    // 判定方式の選択
+    if (this.config.useDistanceBasedJudgment) {
+      // 飛距離ベース判定を使用
+      judgmentResult = this.distanceJudgment.judgeByDistance(
+        trajectory.currentPosition,
+        trajectory.velocity
+      );
+    } else {
+      // 従来のフィールドマップ判定を使用
+      judgmentResult = this.stadiumMap.evaluateBallLanding(
+        trajectory.currentPosition,
+        {
+          velocity: trajectory.velocity,
+          ballId: trajectory.id
+        }
+      );
+    }
 
     if (judgmentResult) {
       trajectory.landingResult = judgmentResult;
@@ -228,6 +243,14 @@ export class BallFlightSystem {
         ? totalTrajectoryPoints / trajectoriesWithLog 
         : undefined
     };
+  }
+
+  /**
+   * プレイヤー座標の更新
+   * バットの位置が変わった時に呼び出し
+   */
+  public updatePlayerPosition(newPosition: Vector3): void {
+    this.distanceJudgment.updatePlayerPosition(newPosition);
   }
 
   /**
