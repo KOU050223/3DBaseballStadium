@@ -64,25 +64,30 @@ export const Ball = ({
     if (!hasCollidedWithTarget.current && (collidedObjectName === 'bat' || collidedObjectName === 'stadium')) {
       console.log(`Ball hit the ${collidedObjectName}! Applying physics changes.`);
       if (rigidBodyRef.current) {
-        let velocityMultiplier = 7.0;
-        let gravityIncrease = 1.5;
-
-        if (collidedObjectName === 'stadium') {
-          // Adjust these values as desired for stadium collision
-          velocityMultiplier = 1; // Example: 1 times velocity
-          gravityIncrease = 1; // Example: 1 increase in gravity
-        }
-
-        // Apply velocity change
         const currentVelocity = rigidBodyRef.current.linvel();
-        const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
-
+        if (collidedObjectName === 'stadium') {
+          // Stadium collision: velocity*1, gravity=3.0
+          const stadiumVelocityMultiplier = 1;
+          const newVelocity = new Vector3(
+            currentVelocity.x * stadiumVelocityMultiplier,
+            currentVelocity.y * stadiumVelocityMultiplier,
+            currentVelocity.z * stadiumVelocityMultiplier
+          );
+          rigidBodyRef.current.setLinvel(newVelocity, true);
+          rigidBodyRef.current.setGravityScale(3.0, true);
+          hasCollidedWithTarget.current = true;
+          return;
+        }
         if (collidedObjectName === 'bat') {
-          // Reverse Y-component and apply multiplier
+          // Bat collision: velocity*7, gravity+=1.5
+          const velocityMultiplier = 7.0;
+          const gravityIncrease = 1.5;
+          const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
           newVelocity.y = Math.abs(currentVelocity.y) * velocityMultiplier;
           newVelocity.x *= velocityMultiplier;
           newVelocity.z *= velocityMultiplier;
-
+          rigidBodyRef.current.setLinvel(newVelocity, true);
+          rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
           // Start cooldown for bat collision
           setIsBatCollisionCooldown(true);
           if (batCollisionCooldownTimer.current) {
@@ -91,20 +96,9 @@ export const Ball = ({
           batCollisionCooldownTimer.current = setTimeout(() => {
             setIsBatCollisionCooldown(false);
             batCollisionCooldownTimer.current = null;
-          }, 100); // Cooldown for 100ms (adjust as needed)
-        } else { // For stadium or other objects
-          newVelocity.multiplyScalar(velocityMultiplier);
+          }, 100);
+          hasCollidedWithTarget.current = true;
         }
-        rigidBodyRef.current.setLinvel(newVelocity, true);
-
-        // Apply gravity change
-        if (collidedObjectName === 'stadium') {
-          rigidBodyRef.current.setGravityScale(3.0, true); // Overwrite gravity for stadium collision
-        } else {
-          rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
-        }
-
-        hasCollidedWithTarget.current = true; // Set flag to true after first collision
       }
     }
   };
