@@ -8,7 +8,7 @@ export const MODEL_CONFIG = {
     scale: 1
   },
   BAT: {
-    position: new Vector3(1.6, 1.2, 0),
+    position: new Vector3(1.6, 1.0, 0),
     rotation: new Euler(90, 0, 0),
     scale: 9
   },
