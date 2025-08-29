@@ -14,6 +14,10 @@ export default function HomePage() {
     router.push('/howto');
   };
 
+  const handleSettingsClick = () => {
+    router.push('/settings');
+  };
+
   return (
     <div className="w-full h-[calc(100vh-80px)] flex flex-col items-center justify-center">
       <button
@@ -27,6 +31,12 @@ export default function HomePage() {
         className="mt-4 px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
       >
         遊び方
+      </button>
+      <button
+        onClick={handleSettingsClick}
+        className="mt-4 px-6 py-3 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+      >
+        設定
       </button>
     </div>
   );
