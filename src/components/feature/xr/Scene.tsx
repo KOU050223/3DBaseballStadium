@@ -7,8 +7,8 @@ import { XR, createXRStore, useXR } from '@react-three/xr';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
-import { VRBatController, VRBatControllerRef } from '@/components/common/3DComponent/VRBatController';
-import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
+import { VRBatController, VRBatControllerRef } from '@/components/xr/VRBatController';
+import { XRBattingMachine } from '@/components/xr/XRBattingMachine';
 import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 
@@ -165,7 +165,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           • 左右矢印キー: バット移動
         </div>
         <div style={{ fontSize: '14px', color: '#FFD54F', backgroundColor: 'rgba(255, 193, 7, 0.1)', padding: '8px', borderRadius: '8px' }}>
-          💡 VRに入ると右手コントローラーでバットを直接操作できます！
+          💡 VRでより現実的な当たり判定を体験！バットの振り速度がボールの飛距離に影響します。
         </div>
       </div>
 
@@ -253,7 +253,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   onError={(error) => console.error('Stadium load error:', error)}
                 />
                 
-                {/* 最新API対応VRバットコントローラー */}
+                {/* 最新API対応改善されたVRバットコントローラー */}
                 <VRBatController
                   ref={batRef}
                   position={batPosition}
@@ -265,8 +265,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   enableVR={true}
                 />
                 
-                {/* バッティングマシーンとボール */}
-                <BattingMachine
+                {/* 改善されたバッティングマシーンとボール */}
+                <XRBattingMachine
                   position={new Vector3(0, 2, 23)}
                   rotation={new Euler(0, Math.PI, 0)}
                   launchInterval={2.0}
@@ -275,6 +275,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   autoStart={true}
                   debugMode={debugMode}
                   gravityScale={gravityScale}
+                  getBatVelocity={() => batRef.current?.getBatVelocity() || new Vector3(0, 0, 0)}
                 />
               </Physics>
             </Suspense>
@@ -285,13 +286,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       {debugMode && (
         <div className="fixed bottom-4 left-4 z-50 bg-gray-800 text-white p-3 rounded text-xs w-64 max-h-96 overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-bold">最新VRバットデバッグ</span>
+            <span className="font-bold">改善されたXRバットデバッグ</span>
           </div>
           
           <div className="mb-4">
-            <div className="text-red-300 mb-2 font-semibold">当たり判定</div>
+            <div className="text-red-300 mb-2 font-semibold">当たり判定改善</div>
             <div className="text-xs text-gray-300">
               <div>スイング中: {batRef.current?.isSwinging() ? 'Yes' : 'No'}</div>
+              <div>バット速度: {batRef.current?.getBatVelocity()?.length().toFixed(2) || '0.00'} m/s</div>
             </div>
           </div>
 

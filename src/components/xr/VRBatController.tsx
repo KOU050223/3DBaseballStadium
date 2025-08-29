@@ -11,10 +11,12 @@ interface VRBatControllerProps extends Omit<BatProps, 'rotation'> {
   startRotation: Euler;
   endRotation: Euler;
   enableVR?: boolean;
+  onVelocityUpdate?: (velocity: Vector3) => void;
 }
 
 export interface VRBatControllerRef {
   isSwinging: () => boolean;
+  getBatVelocity: () => Vector3;
 }
 
 export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerProps>((props, ref) => {
@@ -23,7 +25,8 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
     endRotation, 
     position = new Vector3(0, 0, 0), 
     scale: batVisualScale = 1,
-    enableVR = true 
+    enableVR = true,
+    onVelocityUpdate
   } = props;
   
   const [isSwinging, setIsSwinging] = useState(false);
@@ -34,7 +37,12 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
   const batPositionRef = useRef<Vector3>(position.clone());
   const batRotationRef = useRef<Quaternion>(new Quaternion().setFromEuler(startRotation));
   
-  const swingSpeed = 0.1;
+  // Velocity tracking
+  const previousPosition = useRef<Vector3>(position.clone());
+  const currentVelocity = useRef<Vector3>(new Vector3(0, 0, 0));
+  const velocityHistory = useRef<Vector3[]>([]);
+  
+  const swingSpeed = 0.12; // Slightly faster for VR
   
   // XRの状態を取得
   const xrState = useXR();
@@ -43,7 +51,8 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
   const rightControllerState = useXRInputSourceState('controller', 'right');
   
   useImperativeHandle(ref, () => ({
-    isSwinging: () => isSwinging
+    isSwinging: () => isSwinging,
+    getBatVelocity: () => currentVelocity.current.clone()
   }));
 
   // VRモードの状態を更新
@@ -57,13 +66,13 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
     if (!isSwinging) {
       setSwingProgress(0);
       setIsSwinging(true);
-      console.log('Swing triggered!');
+      console.log(' swing triggered!');
       
       // VRモードでの振動フィードバック
       if (vrMode && rightControllerState?.inputSource?.gamepad?.hapticActuators?.[0]) {
         try {
-          rightControllerState.inputSource.gamepad.hapticActuators[0].pulse(0.5, 200);
-          console.log('Haptic feedback sent');
+          rightControllerState.inputSource.gamepad.hapticActuators[0].pulse(0.7, 300);
+          console.log(' haptic feedback sent');
         } catch (error) {
           console.log('Haptic feedback failed:', error);
         }
@@ -71,12 +80,12 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
     }
   }, [isSwinging, vrMode, rightControllerState]);
 
-  // VRコントローラーのイベントリスナー設定（最新API）
+  // VRコントローラーのイベントリスナー設定
   useXRInputSourceEvent(
     rightControllerState?.inputSource || undefined,
     'select',
     () => {
-      console.log('Controller select event');
+      console.log('controller select event');
       triggerSwing();
     },
     [triggerSwing]
@@ -86,7 +95,7 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
     rightControllerState?.inputSource || undefined,
     'squeeze',
     () => {
-      console.log('Controller squeeze event');
+      console.log(' controller squeeze event');
       triggerSwing();
     },
     [triggerSwing]
@@ -96,7 +105,7 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
     if (!vrMode) {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.code === 'Space') {
-          console.log('Space key pressed');
+          console.log(' space key pressed');
           triggerSwing();
         }
       };
@@ -106,6 +115,29 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
       };
     }
   }, [triggerSwing, vrMode]);
+
+  // Calculate velocity
+  const updateVelocity = useCallback((newPosition: Vector3) => {
+    const deltaTime = 1/60; // Assuming 60fps
+    const velocity = newPosition.clone().sub(previousPosition.current).divideScalar(deltaTime);
+    
+    // Store velocity in history for smoothing
+    velocityHistory.current.push(velocity);
+    if (velocityHistory.current.length > 5) {
+      velocityHistory.current.shift();
+    }
+    
+    // Calculate average velocity for smoothing
+    const avgVelocity = velocityHistory.current.reduce((sum, v) => sum.add(v), new Vector3()).divideScalar(velocityHistory.current.length);
+    currentVelocity.current.copy(avgVelocity);
+    
+    previousPosition.current.copy(newPosition);
+    
+    // Callback for external components
+    if (onVelocityUpdate) {
+      onVelocityUpdate(currentVelocity.current);
+    }
+  }, [onVelocityUpdate]);
 
   useFrame(() => {
     if (!rigidBodyRef.current) return;
@@ -124,10 +156,13 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
         controller.getWorldPosition(controllerPosition);
         controller.getWorldQuaternion(controllerQuaternion);
         
-        // バットをコントローラーの位置
+        // バットをコントローラーの位置に配置（オフセット付き）
         const batOffset = new Vector3(0, -0.1, -0.3);
         batOffset.applyQuaternion(controllerQuaternion);
         const batPosition = controllerPosition.clone().add(batOffset);
+        
+        // Update velocity tracking
+        updateVelocity(batPosition);
         
         batPositionRef.current.copy(batPosition);
         rigidBodyRef.current.setNextKinematicTranslation(batPosition);
@@ -161,12 +196,15 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
           rigidBodyRef.current.setNextKinematicRotation(controllerQuaternion);
         }
       } catch (error) {
-        console.error('VR controller tracking error:', error);
+        console.error('Enhanced  VR controller tracking error:', error);
         // フォールバック処理
         rigidBodyRef.current.setNextKinematicTranslation(position);
         rigidBodyRef.current.setNextKinematicRotation(startQuat);
+        updateVelocity(position);
       }
     } else {
+      // Non-VR mode
+      updateVelocity(position);
       rigidBodyRef.current.setNextKinematicTranslation(position);
       
       if (isSwinging) {
@@ -202,7 +240,7 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
       ref={rigidBodyRef}
       type="kinematicPosition"
       colliders={false}
-      name="bat"
+      name="enhanced-bat"
     >
       <MeshCollider type="hull">
         <Bat 
@@ -214,10 +252,19 @@ export const VRBatController = forwardRef<VRBatControllerRef, VRBatControllerPro
         
         {/* VRモード時のデバッグ表示 */}
         {vrMode && rightControllerState && (
-          <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[0.05, 0.03, 0.1]} />
-            <meshStandardMaterial color="#00ff00" transparent opacity={0.7} />
-          </mesh>
+          <>
+            {/* Controller tracking indicator */}
+            <mesh position={[0, 0, 0.1]}>
+              <boxGeometry args={[0.05, 0.03, 0.1]} />
+              <meshStandardMaterial color="#00ff00" transparent opacity={0.7} />
+            </mesh>
+            
+            {/* Velocity indicator */}
+            <mesh position={[0, 0, 0.2]}>
+              <boxGeometry args={[0.02, 0.02, Math.min(currentVelocity.current.length() * 0.01, 0.3)]} />
+              <meshStandardMaterial color="#ffff00" transparent opacity={0.8} />
+            </mesh>
+          </>
         )}
       </MeshCollider>
     </RigidBody>
