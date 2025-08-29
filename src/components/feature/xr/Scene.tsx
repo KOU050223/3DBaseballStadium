@@ -3,12 +3,11 @@
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
-import { XR, createXRStore } from '@react-three/xr';
+import { XR, createXRStore, useXR } from '@react-three/xr';
 import { Vector3, Euler } from 'three';
-import * as THREE from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
-import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
+import { VRBatController, VRBatControllerRef } from '@/components/common/3DComponent/VRBatController';
 import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
 import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
@@ -17,8 +16,15 @@ interface SceneProps {
   debugMode?: boolean;
 }
 
-// XRストアの作成
 const store = createXRStore();
+
+// VR状態表示コンポーネント
+const VRStatusDisplay: React.FC = () => {
+  const xrState = useXR();
+  // sessionの存在でVR状態を判定
+  const isPresenting = !!xrState.session;
+  return <span>{isPresenting ? '🥽 VR Active' : '📱 Standard Mode'}</span>;
+};
 
 export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [stadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
@@ -30,9 +36,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [ballSpeed, setBallSpeed] = useState<number>(60);
   const [gravityScale, setGravityScale] = useState<number>(1.5);
 
-  const batRef = useRef<BatControllerRef>(null);
+  const batRef = useRef<VRBatControllerRef>(null);
 
-  // キーボード操作でバットの位置を調整
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -46,7 +51,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             newX += step;
           }
           
-          // X座標を 0.7 から 2.5 の範囲に制限
           const clampedX = Math.max(0.7, Math.min(2.5, newX));
           
           return new Vector3(clampedX, currentPosition.y, currentPosition.z);
@@ -61,7 +65,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
     };
   }, []);
 
-  // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
   const endRotation = new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180);
 
@@ -79,8 +82,12 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       }}>
         <button 
           type="button" 
-          onClick={() => store.enterVR()}
-          className="vr-enter-button"
+          onClick={() => {
+            console.log('Entering VR...');
+            store.enterVR().catch((error) => {
+              console.error('Failed to enter VR:', error);
+            });
+          }}
           style={{
             backgroundColor: '#1E40AF',
             color: 'white',
@@ -89,32 +96,25 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             padding: '16px 32px',
             fontSize: '18px',
             fontWeight: '600',
-            minWidth: '180px',
-            minHeight: '50px',
+            minWidth: '220px',
+            minHeight: '60px',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(30, 64, 175, 0.3)',
             transition: 'all 0.2s ease',
             outline: 'none',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#1E3A8A';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(30, 64, 175, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#1E40AF';
-            e.currentTarget.style.transform = 'translateY(0px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(30, 64, 175, 0.3)';
           }}
         >
-          🥽 VR体験を開始
+          🥽 VR野球体験を開始
         </button>
 
         <button 
           type="button" 
-          onClick={() => store.enterAR()}
-          className="ar-enter-button"
+          onClick={() => {
+            console.log('Entering AR...');
+            store.enterAR().catch((error) => {
+              console.error('Failed to enter AR:', error);
+            });
+          }}
           style={{
             backgroundColor: '#059669',
             color: 'white',
@@ -123,27 +123,50 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             padding: '16px 32px',
             fontSize: '18px',
             fontWeight: '600',
-            minWidth: '180px',
-            minHeight: '50px',
+            minWidth: '220px',
+            minHeight: '60px',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
             transition: 'all 0.2s ease',
             outline: 'none',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#047857';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(5, 150, 105, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#059669';
-            e.currentTarget.style.transform = 'translateY(0px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
           }}
         >
-          📱 AR体験を開始
+          📱 AR野球体験を開始
         </button>
+      </div>
+
+      {/* VR操作説明 */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        right: '20px',
+        transform: 'translateY(-50%)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        color: 'white',
+        padding: '24px',
+        borderRadius: '15px',
+        fontSize: '16px',
+        maxWidth: '350px',
+        zIndex: 999,
+        border: '2px solid #4FC3F7'
+      }}>
+        <div style={{ fontWeight: 'bold', marginBottom: '16px', color: '#4FC3F7', fontSize: '18px' }}>
+          🎯 Meta Quest 3 操作方法
+        </div>
+        <div style={{ marginBottom: '12px' }}>
+          <strong style={{ color: '#FFD54F' }}>右手コントローラー（バット）:</strong><br/>
+          • 🎮 トリガー（人差し指）: バットスイング<br/>
+          • 🤏 グリップ（中指）: バットスイング<br/>
+          • 📍 コントローラーを動かしてバット操作
+        </div>
+        <div style={{ marginBottom: '12px' }}>
+          <strong style={{ color: '#81C784' }}>キーボード操作（非VR）:</strong><br/>
+          • スペースキー: バットスイング<br/>
+          • 左右矢印キー: バット移動
+        </div>
+        <div style={{ fontSize: '14px', color: '#FFD54F', backgroundColor: 'rgba(255, 193, 7, 0.1)', padding: '8px', borderRadius: '8px' }}>
+          💡 VRに入ると右手コントローラーでバットを直接操作できます！
+        </div>
       </div>
 
       {/* Debug Panel */}
@@ -151,7 +174,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
         <div style={{
           position: 'fixed',
           top: '20px',
-          right: '20px',
+          left: '20px',
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           color: 'white',
           padding: '16px',
@@ -161,11 +184,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           zIndex: 999
         }}>
           <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Meta Quest 3 Debug</div>
-          <div>User Agent: {typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Quest') ? 'Meta Quest Browser' : 'Other Browser') : 'Loading...'}</div>
           <div>WebXR: {typeof navigator !== 'undefined' && 'xr' in navigator ? '✅' : '❌'}</div>
+          <div>VR Status: 📱 Standard Mode</div>
           <div style={{ marginTop: '8px', fontSize: '10px', color: '#ccc' }}>
-            推奨: Meta Quest Browser使用<br/>
-            Settings → Advanced → Developer Mode → WebXR有効化
+            最新@react-three/xr v6+ API使用<br/>
+            コンソールでログを確認してください
           </div>
         </div>
       )}
@@ -180,7 +203,10 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
         gl={{
           antialias: true,
           alpha: true,
-          powerPreference: 'high-performance'
+          powerPreference: 'high-performance',
+        }}
+        onCreated={({ gl }) => {
+          console.log('Canvas created, WebXR supported:', !!gl.xr);
         }}
       >
         <XR store={store}>
@@ -192,22 +218,24 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             enableRotate={true}
           />
           
-          {/* 照明設定 - Meta Quest 3に最適化 */}
+          {/* 照明設定 */}
           <ambientLight intensity={0.6} />
           <directionalLight 
             position={[10, 10, 5]} 
-            intensity={1} 
-            castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
+            intensity={1}
           />
           <pointLight position={[-10, -10, -5]} intensity={0.5} />
           
           {/* 環境マップ */}
           <Environment preset="sunset" background />
           
-          {/* スタジアム、バット、バッティングマシーン */}
-          <ErrorBoundary fallback={null}>
+          {/* 3Dコンテンツ */}
+          <ErrorBoundary fallback={
+            <mesh position={[0, 0, 0]}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color="red" />
+            </mesh>
+          }>
             <Suspense fallback={
               <mesh position={[0, 0, 0]}>
                 <boxGeometry args={[1, 1, 1]} />
@@ -224,14 +252,17 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   onLoad={() => console.log('Stadium loaded successfully')}
                   onError={(error) => console.error('Stadium load error:', error)}
                 />
-                <BatController
+                
+                {/* 最新API対応VRバットコントローラー */}
+                <VRBatController
                   ref={batRef}
                   position={batPosition}
                   scale={batScale}
-                  startRotation={new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180)}
-                  endRotation={new Euler(-150 * Math.PI / 180, 0, 80 * Math.PI / 180)}
+                  startRotation={startRotation}
+                  endRotation={endRotation}
                   modelPath="/models/BaseballBat.glb"
-                  onLoad={() => console.log('Bat loaded')}
+                  onLoad={() => console.log('VR Bat loaded successfully')}
+                  enableVR={true}
                 />
                 
                 {/* バッティングマシーンとボール */}
@@ -252,9 +283,9 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       </Canvas>
 
       {debugMode && (
-        <div className="fixed top-4 right-4 z-50 bg-gray-800 text-white p-3 rounded text-xs w-64 max-h-96 overflow-y-auto">
+        <div className="fixed bottom-4 left-4 z-50 bg-gray-800 text-white p-3 rounded text-xs w-64 max-h-96 overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-bold">統合シーンデバッグ</span>
+            <span className="font-bold">最新VRバットデバッグ</span>
           </div>
           
           <div className="mb-4">
@@ -267,13 +298,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           <div className="mb-4">
             <div className="text-yellow-300 mb-2 font-semibold">操作</div>
             <div className="text-xs text-gray-300">
-              <div>スペースキー: バットスイング</div>
-              <div>左右矢印キー: バット左右移動</div>
+              <div>VR: 右手コントローラーでバット操作</div>
+              <div>非VR: スペースキー でバットスイング</div>
+              <div>非VR: 左右矢印キー でバット左右移動</div>
             </div>
           </div>
           
           <div className="mb-4">
-            <div className="text-blue-300 mb-2 font-semibold">バット</div>
+            <div className="text-blue-300 mb-2 font-semibold">バット設定</div>
             <div className="mb-2">
               <div className="text-gray-300 mb-1">Scale</div>
               <input
@@ -292,28 +324,10 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               />
               <div className="text-xs text-gray-400">{batPosition.x.toFixed(1)}</div>
             </div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Position Y (上下)</div>
-              <input
-                type="range" min="-5" max="10" step="0.1" value={batPosition.y}
-                onChange={(e) => setBatPosition(new Vector3(batPosition.x, +e.target.value, batPosition.z))}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{batPosition.y.toFixed(1)}</div>
-            </div>
-            <div className="mb-2">
-              <div className="text-gray-300 mb-1">Position Z (前後)</div>
-              <input
-                type="range" min="-5" max="5" step="0.1" value={batPosition.z}
-                onChange={(e) => setBatPosition(new Vector3(batPosition.x, batPosition.y, +e.target.value))}
-                className="w-full h-1"
-              />
-              <div className="text-xs text-gray-400">{batPosition.z.toFixed(1)}</div>
-            </div>
           </div>
 
           <div className="mb-4">
-            <div className="text-green-300 mb-2 font-semibold">ボール</div>
+            <div className="text-green-300 mb-2 font-semibold">ボール設定</div>
             <div className="mb-2">
               <div className="text-gray-300 mb-1">Speed</div>
               <input
