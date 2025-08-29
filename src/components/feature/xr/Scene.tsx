@@ -4,6 +4,7 @@ import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import { XR, createXRStore, useXR } from '@react-three/xr';
+import styles from './Scene.module.css';
 import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
@@ -17,14 +18,6 @@ interface SceneProps {
 }
 
 const store = createXRStore();
-
-// VR状態表示コンポーネント
-const VRStatusDisplay: React.FC = () => {
-  const xrState = useXR();
-  // sessionの存在でVR状態を判定
-  const isPresenting = !!xrState.session;
-  return <span>{isPresenting ? '🥽 VR Active' : '📱 Standard Mode'}</span>;
-};
 
 export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   const [stadiumScale] = useState<number>(MODEL_CONFIG.STADIUM.scale);
@@ -71,37 +64,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
   return (
     <>
       {/* AR/VRエントリーボタン */}
-      <div style={{
-        position: 'fixed',
-        bottom: '30px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        display: 'flex',
-        gap: '16px'
-      }}>
+      <div className={styles.vrButtonContainer}>
         <button 
           type="button" 
+          className={styles.vrButton}
           onClick={() => {
-            console.log('Entering VR...');
             store.enterVR().catch((error) => {
               console.error('Failed to enter VR:', error);
             });
-          }}
-          style={{
-            backgroundColor: '#1E40AF',
-            color: 'white',
-            border: 'none',
-            borderRadius: '25px',
-            padding: '16px 32px',
-            fontSize: '18px',
-            fontWeight: '600',
-            minWidth: '220px',
-            minHeight: '60px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(30, 64, 175, 0.3)',
-            transition: 'all 0.2s ease',
-            outline: 'none',
           }}
         >
           VR野球体験を開始
@@ -110,18 +80,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
       <Canvas
         camera={{ position: [0, 1.6, 3], fov: 75 }}
-        style={{ 
-          width: '100%', 
-          height: '100%',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}
+        className={styles.canvas}
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: 'high-performance',
         }}
         onCreated={({ gl }) => {
-          console.log('Canvas created, WebXR supported:', !!gl.xr);
+
         }}
       >
         <XR store={store}>
@@ -167,8 +133,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   onLoad={() => console.log('Stadium loaded successfully')}
                   onError={(error) => console.error('Stadium load error:', error)}
                 />
-                
-                {/* 最新API対応改善されたVRバットコントローラー */}
                 <VRBatController
                   ref={batRef}
                   position={batPosition}
@@ -180,7 +144,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                   enableVR={true}
                 />
                 
-                {/* 改善されたバッティングマシーンとボール */}
                 <XRBattingMachine
                   position={new Vector3(0, 2, 23)}
                   rotation={new Euler(0, Math.PI, 0)}
