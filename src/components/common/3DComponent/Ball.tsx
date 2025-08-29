@@ -3,8 +3,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Vector3 } from 'three';
 import { RigidBody, BallCollider, RapierRigidBody, CollisionEnterPayload } from '@react-three/rapier';
-import { useGLBLoader } from '@/hooks/useGLBLoader'; // useGLBLoaderをインポート
-import { useFrame } from '@react-three/fiber';
+import { useGLBLoader } from '@/hooks/useGLBLoader';
+import { useRapierFieldZoneManager } from '@/hooks/field/useRapierFieldZoneManager';
+import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 export interface BallProps {
   id: string;
@@ -13,6 +14,8 @@ export interface BallProps {
   onRemove: (id: string) => void;
   radius?: number;
   gravityScale?: number;
+  onJudgment?: (result: HitJudgmentResult) => void;
+  enableFieldZoneTracking?: boolean;
 }
 
 export const Ball = ({
@@ -22,9 +25,19 @@ export const Ball = ({
   onRemove,
   radius = 5.0, // Realistic baseball radius
   gravityScale = 1.5,
+  onJudgment,
+  enableFieldZoneTracking = true
 }: BallProps) => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
-  const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' }); // useGLBLoaderを使ってモデルをロード
+  const glbScene = useGLBLoader({ modelPath: '/models/BaseballBall.glb' });
+  const hasBeenHitRef = useRef<boolean>(false);
+  const isTrackingRef = useRef<boolean>(false);
+  
+  // Rapierベースのフィールドゾーン管理システム
+  const { 
+    startTracking, 
+    stopTracking
+  } = useRapierFieldZoneManager();
 
   useEffect(() => {
     // Apply initial impulse when the component mounts
@@ -39,12 +52,15 @@ export const Ball = ({
 
     return () => {
       clearTimeout(timer);
+      // クリーンアップ時にトラッキングを停止
+      if (enableFieldZoneTracking && isTrackingRef.current) {
+        stopTracking(id);
+      }
       if (batCollisionCooldownTimer.current) {
         clearTimeout(batCollisionCooldownTimer.current);
       }
     };
-
-  }, [id, initialVelocity, onRemove]);
+  }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking]);
 
   const hasCollidedWithTarget = useRef(false); // Add this line
   const [isBatCollisionCooldown, setIsBatCollisionCooldown] = useState(false);
@@ -55,56 +71,49 @@ export const Ball = ({
 
     if (collidedObjectName === 'bat') {
       console.log('Ball hit the bat!');
+      
       if (isBatCollisionCooldown) {
         console.log('Ignoring bat collision due to cooldown.');
         return; // Ignore collision if in cooldown
       }
-    }
+      
+      hasBeenHitRef.current = true;
 
-    if (!hasCollidedWithTarget.current && (collidedObjectName === 'bat' || collidedObjectName === 'stadium')) {
-      console.log(`Ball hit the ${collidedObjectName}! Applying physics changes.`);
-      if (rigidBodyRef.current) {
-        let velocityMultiplier = 7.0;
-        let gravityIncrease = 1.5;
+      // Apply velocity change
+      const currentVelocity = rigidBodyRef.current.linvel();
+      const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
 
-        if (collidedObjectName === 'stadium') {
-          // Adjust these values as desired for stadium collision
-          velocityMultiplier = 1; // Example: 1 times velocity
-          gravityIncrease = 1; // Example: 1 increase in gravity
-        }
+      // Reverse Y-component and apply multiplier for bat collision
+      const velocityMultiplier = 7.0;
+      newVelocity.y = Math.abs(currentVelocity.y) * velocityMultiplier;
+      newVelocity.x *= velocityMultiplier;
+      newVelocity.z *= velocityMultiplier;
+      rigidBodyRef.current.setLinvel(newVelocity, true);
 
-        // Apply velocity change
-        const currentVelocity = rigidBodyRef.current.linvel();
-        const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+      // Apply gravity increase
+      const gravityIncrease = 1.5;
+      rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
 
-        if (collidedObjectName === 'bat') {
-          // Reverse Y-component and apply multiplier
-          newVelocity.y = Math.abs(currentVelocity.y) * velocityMultiplier;
-          newVelocity.x *= velocityMultiplier;
-          newVelocity.z *= velocityMultiplier;
+      // Start cooldown for bat collision
+      setIsBatCollisionCooldown(true);
+      if (batCollisionCooldownTimer.current) {
+        clearTimeout(batCollisionCooldownTimer.current);
+      }
+      batCollisionCooldownTimer.current = setTimeout(() => {
+        setIsBatCollisionCooldown(false);
+        batCollisionCooldownTimer.current = null;
+      }, 100);
 
-          // Start cooldown for bat collision
-          setIsBatCollisionCooldown(true);
-          if (batCollisionCooldownTimer.current) {
-            clearTimeout(batCollisionCooldownTimer.current);
-          }
-          batCollisionCooldownTimer.current = setTimeout(() => {
-            setIsBatCollisionCooldown(false);
-            batCollisionCooldownTimer.current = null;
-          }, 100); // Cooldown for 100ms (adjust as needed)
-        } else { // For stadium or other objects
-          newVelocity.multiplyScalar(velocityMultiplier);
-        }
-        rigidBodyRef.current.setLinvel(newVelocity, true);
-
-        // Apply gravity change
-        if (collidedObjectName === 'stadium') {
-          rigidBodyRef.current.setGravityScale(3.0, true); // Overwrite gravity for stadium collision
-        } else {
-          rigidBodyRef.current.setGravityScale(rigidBodyRef.current.gravityScale() + gravityIncrease, true);
-        }
-
-        hasCollidedWithTarget.current = true; // Set flag to true after first collision
+      // Rapierベースのフィールドゾーン追跡を開始
+      if (enableFieldZoneTracking && !isTrackingRef.current) {
+        startTracking(id, rigidBodyRef.current, (result) => {
+          onJudgment?.(result);
+          // 判定完了後はボールを削除
+          setTimeout(() => {
+            onRemove(id);
+          }, 1500);
+        });
+        isTrackingRef.current = true;
       }
     }
   };

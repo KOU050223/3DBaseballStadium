@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Vector3, Euler } from 'three';
 import { Ball, BallProps } from './Ball';
+import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 export interface BattingMachineRef {
   launchBall: () => void;
@@ -14,6 +15,7 @@ export interface BattingMachineProps {
   launchAngle?: number;
   gravityScale?: number;
   debugMode?: boolean;
+  onJudgment?: (result: HitJudgmentResult) => void;
 }
 
 // Use a type that omits onRemove as it's handled internally
@@ -79,6 +81,7 @@ export const BattingMachine = forwardRef<BattingMachineRef, BattingMachineProps>
           key={ballProps.id} 
           {...ballProps} 
           onRemove={handleRemoveBall}
+          onJudgment={onJudgment}
         />
       ))}
     </>

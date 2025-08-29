@@ -12,6 +12,9 @@ import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 import { Scoreboard } from '@/components/game/Scoreboard';
 import { GameControls } from '@/components/game/GameControls';
+import { RapierStadiumFieldVisualizer } from '@/components/field/RapierFieldZone';
+import { useFieldZoneManager } from '@/hooks/field/useFieldZoneManager';
+import { useGameActions } from '@/stores/gameStore';
 
 interface SceneProps {
   debugMode?: boolean;
@@ -24,13 +27,18 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
-  const [ballSpeed, setBallSpeed] = useState<number>(20);
-  const [gravityScale, setGravityScale] = useState<number>(0);
+  const [ballSpeed, setBallSpeed] = useState<number>(60);
+  const [gravityScale, setGravityScale] = useState<number>(1.5);
+  const [showFieldZones, setShowFieldZones] = useState<boolean>(true);
 
   const batRef = useRef<BatControllerRef>(null);
   const battingMachineRef = useRef<BattingMachineRef>(null); // Create ref for BattingMachine
 
-  // キーボード操作でバットの位置を調整し、ボールを射出
+  // フィールドゾーンマネージャーとゲームストアの統合
+  const fieldZoneManager = useFieldZoneManager();
+  const { processFieldJudgment } = useGameActions();
+
+  // キーボード操作でバットの位置を調整
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -60,6 +68,14 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []); // Add battingMachineRef to dependency array if it changes, but it's a ref so it won't.
+
+  // バット位置変更時にプレイヤー座標を更新
+  useEffect(() => {
+    fieldZoneManager.updatePlayerPosition(batPosition);
+  }, [batPosition, fieldZoneManager]);
+
+  // バット位置が変更された時はuseRapierFieldZoneManagerも更新する必要がある
+  // 現在はBallコンポーネントから直接コールバックを受け取るようにした
 
   // Define start and end rotations for the bat swing
   const startRotation = new Euler(-13 * Math.PI / 180, 0, 13 * Math.PI / 180);
@@ -99,7 +115,6 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 startRotation={startRotation}
                 endRotation={endRotation}
                 modelPath="/models/BaseballBat.glb"
-                onLoad={() => console.log('Bat loaded')}
               />
               
               {/* バッティングマシーンとボール */}
@@ -111,7 +126,24 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 launchAngle={-2}
                 debugMode={debugMode}
                 gravityScale={gravityScale}
+                onJudgment={(result) => {
+                  console.log(`⚾ Distance-based judgment: ${result.judgmentType}`, {
+                    distance: `${result.metadata?.distance?.toFixed(1)}m`,
+                    height: `${result.metadata?.height?.toFixed(1)}m`,
+                    position: result.position
+                  });
+                  processFieldJudgment(result);
+                }}
               />
+
+              {/* フィールドゾーン表示 */}
+              {showFieldZones && (
+                <RapierStadiumFieldVisualizer 
+                  visible={true} 
+                  animated={true}
+                  showDebugInfo={debugMode}
+                />
+              )}
             </Physics>
           </Suspense>
         </ErrorBoundary>
@@ -198,6 +230,21 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
                 className="w-full h-1"
               />
               <div className="text-xs text-gray-400">{gravityScale.toFixed(1)}</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-purple-300 mb-2 font-semibold">フィールドゾーン</div>
+            <div className="mb-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showFieldZones}
+                  onChange={(e) => setShowFieldZones(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-gray-300 text-xs">ゾーン表示</span>
+              </label>
             </div>
           </div>
         </div>
