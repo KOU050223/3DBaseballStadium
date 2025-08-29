@@ -7,7 +7,7 @@ import { Vector3, Euler } from 'three';
 import { ErrorBoundary } from '@/components/common/3DComponent/ErrorBoundary';
 import BaseballStadium from '@/components/common/3DComponent/BaseballStadium';
 import { BatController, BatControllerRef } from '@/components/common/3DComponent/BatController';
-import { BattingMachine } from '@/components/common/3DComponent/BattingMachine';
+import { BattingMachine, BattingMachineRef } from '@/components/common/3DComponent/BattingMachine'; // Import BattingMachineRef
 import { Physics } from '@react-three/rapier';
 import { MODEL_CONFIG } from '@/constants/ModelPosition';
 import { Scoreboard } from '@/components/game/Scoreboard';
@@ -27,11 +27,12 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
 
   const [batScale, setBatScale] = useState<number>(MODEL_CONFIG.BAT.scale);
   const [batPosition, setBatPosition] = useState<Vector3>(MODEL_CONFIG.BAT.position);
-  const [ballSpeed, setBallSpeed] = useState<number>(60);
-  const [gravityScale, setGravityScale] = useState<number>(1.5);
+  const [ballSpeed, setBallSpeed] = useState<number>(20);
+  const [gravityScale, setGravityScale] = useState<number>(0);
   const [showFieldZones, setShowFieldZones] = useState<boolean>(true);
 
   const batRef = useRef<BatControllerRef>(null);
+  const battingMachineRef = useRef<BattingMachineRef>(null); // Create ref for BattingMachine
 
   // フィールドゾーンマネージャーとゲームストアの統合
   const fieldZoneManager = useFieldZoneManager();
@@ -56,6 +57,8 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
           
           return new Vector3(clampedX, currentPosition.y, currentPosition.z);
         });
+      } else if (event.key === 'e' || event.key === 'E') { // Add 'E' key listener
+        battingMachineRef.current?.launchBall();
       }
     };
 
@@ -64,7 +67,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, []); // Add battingMachineRef to dependency array if it changes, but it's a ref so it won't.
 
   // バット位置変更時にプレイヤー座標を更新
   useEffect(() => {
@@ -116,12 +119,11 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
               
               {/* バッティングマシーンとボール */}
               <BattingMachine
+                ref={battingMachineRef} // Pass ref to BattingMachine
                 position={new Vector3(0, 2, 23)}
                 rotation={new Euler(0, Math.PI, 0)}
-                launchInterval={2.0}
                 ballSpeed={ballSpeed}
                 launchAngle={-2}
-                autoStart={true}
                 debugMode={debugMode}
                 gravityScale={gravityScale}
                 onJudgment={(result) => {
@@ -165,6 +167,7 @@ export const Scene: React.FC<SceneProps> = ({ debugMode = false }) => {
             <div className="text-xs text-gray-300">
               <div>スペースキー: バットスイング</div>
               <div>左右矢印キー: バット左右移動</div>
+              <div>Eキー: ボール射出</div> {/* Add E key instruction */}
             </div>
           </div>
           

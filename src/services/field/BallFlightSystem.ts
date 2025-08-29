@@ -56,7 +56,8 @@ export class BallFlightSystem {
     ballId: string,
     newPosition: Vector3,
     newVelocity: Vector3,
-    deltaTime: number
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _deltaTime: number
   ): HitJudgmentResult | null {
     const trajectory = this.trackedBalls.get(ballId);
     if (!trajectory || !trajectory.isTracking || trajectory.hasLanded) {
@@ -73,7 +74,7 @@ export class BallFlightSystem {
     }
 
     // 落下判定
-    if (this.shouldConsiderLanded(trajectory, deltaTime)) {
+    if (this.shouldConsiderLanded(trajectory)) {
       return this.processBallLanding(trajectory);
     }
 
@@ -88,7 +89,7 @@ export class BallFlightSystem {
   /**
    * 落下判定の条件チェック
    */
-  private shouldConsiderLanded(trajectory: BallTrajectory, _deltaTime: number): boolean {
+  private shouldConsiderLanded(trajectory: BallTrajectory): boolean {
     const pos = trajectory.currentPosition;
     const vel = trajectory.velocity;
 
@@ -136,8 +137,7 @@ export class BallFlightSystem {
     if (this.config.useDistanceBasedJudgment) {
       // 飛距離ベース判定を使用
       judgmentResult = this.distanceJudgment.judgeByDistance(
-        trajectory.currentPosition,
-        trajectory.velocity
+        trajectory.currentPosition
       );
     } else {
       // 従来のフィールドマップ判定を使用
@@ -152,7 +152,7 @@ export class BallFlightSystem {
 
     if (judgmentResult) {
       trajectory.landingResult = judgmentResult;
-      
+
       // コールバック実行（将来的にイベントシステムに拡張可能）
       this.onBallLanding(judgmentResult, trajectory);
     }
@@ -228,7 +228,7 @@ export class BallFlightSystem {
     this.trackedBalls.forEach(trajectory => {
       if (trajectory.isTracking) activeTracking++;
       if (trajectory.hasLanded) landed++;
-      
+
       if (trajectory.trajectory) {
         totalTrajectoryPoints += trajectory.trajectory.length;
         trajectoriesWithLog++;
@@ -239,8 +239,8 @@ export class BallFlightSystem {
       totalTracked: this.trackedBalls.size,
       activeTracking,
       landed,
-      averageTrajectoryLength: trajectoriesWithLog > 0 
-        ? totalTrajectoryPoints / trajectoriesWithLog 
+      averageTrajectoryLength: trajectoriesWithLog > 0
+        ? totalTrajectoryPoints / trajectoriesWithLog
         : undefined
     };
   }
