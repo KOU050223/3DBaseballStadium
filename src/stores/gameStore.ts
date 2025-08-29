@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { GameState, CountState, TeamState, InningState, PlayResult, RunnerState, HitType, RunnerAdvancement } from '@/types/game/gameState';
+import type { GameState, PlayResult, HitType, RunnerAdvancement } from '@/types/game/gameState';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
 
 interface GameStore extends GameState {
