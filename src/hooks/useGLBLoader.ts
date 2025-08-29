@@ -18,7 +18,6 @@ export const useGLBLoader = ({
   rotation = [0, 0, 0],
   onLoad
 }: UseGLBLoaderProps) => {
-  console.log('useGLBLoader called with modelPath:', modelPath);
 
   // useGLTFは非同期でモデルをロードし、エラー時は例外を投げる
   // ErrorBoundaryとSuspenseでハンドリングされる
@@ -29,10 +28,8 @@ export const useGLBLoader = ({
       glb.scene.scale.set(scale[0], scale[1], scale[2]);
       glb.scene.position.set(position[0], position[1], position[2]);
       glb.scene.rotation.set(rotation[0], rotation[1], rotation[2]);
-      console.log('GLB model loaded successfully:', modelPath);
       onLoad?.();
     } else if (glb) {
-      console.log('GLB loaded but no scene found:', modelPath);
     }
   }, [glb, scale, position, rotation, onLoad, modelPath]);
 
