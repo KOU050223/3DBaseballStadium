@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { HitJudgmentResult } from '@/types/field/hitJudgment';
+import { PlayResult } from '@/types/game/gameState';
 
 /**
  * 飛距離に基づく打球判定システム
@@ -46,7 +47,7 @@ export class DistanceBasedJudgment {
     // ファウル判定（X軸の符号で左右ファウルを判定）
     if (this.isFoulTerritory(ballLandingPosition)) {
       const foulResult = {
-        judgmentType: 'foul',
+        judgmentType: 'foul' as const,
         zoneId: 'foul-territory',
         position: ballLandingPosition.clone(),
         metadata: {
@@ -74,7 +75,7 @@ export class DistanceBasedJudgment {
     const judgmentType = this.getJudgmentByDistance(horizontalDistance, ballLandingPosition.y);
     
     const result = {
-      judgmentType,
+      judgmentType: judgmentType as PlayResult,
       zoneId: `distance-${judgmentType}`,
       position: ballLandingPosition.clone(),
       metadata: {

@@ -22,7 +22,7 @@ export class FieldZoneManager {
     const defaultPlayerPosition = playerPosition || new Vector3(1.6, 1.4, 0); // デフォルトはバット位置
     this.ballFlightSystem = new BallFlightSystem(this.stadiumMap, defaultPlayerPosition, {
       enableTrajectoryLogging: false, // パフォーマンス重視でデフォルトはoff
-      groundLevel: -1,
+      groundLevel: 1,
       maxTrackingTime: 15, // 15秒で追跡タイムアウト
       minVelocityThreshold: 0.5,
       useDistanceBasedJudgment: true // 飛距離ベース判定を有効化
@@ -206,8 +206,8 @@ export class FieldZoneManager {
    * 設定の一括更新
    */
   public updateSettings(settings: {
-    fieldMapConfig?: Parameters<typeof StadiumFieldMap.prototype.constructor>[0];
-    ballFlightConfig?: Parameters<typeof BallFlightSystem.prototype.updateConfig>[0];
+    fieldMapConfig?: Record<string, unknown>; // StadiumFieldMapの設定型
+    ballFlightConfig?: Record<string, unknown>; // BallFlightSystemの設定型
   }): void {
     if (settings.ballFlightConfig) {
       this.ballFlightSystem.updateConfig(settings.ballFlightConfig);

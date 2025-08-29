@@ -62,7 +62,6 @@ export const Ball = ({
     };
   }, [id, initialVelocity, onRemove, enableFieldZoneTracking, stopTracking]);
 
-  const hasCollidedWithTarget = useRef(false); // Add this line
   const [isBatCollisionCooldown, setIsBatCollisionCooldown] = useState(false);
   const batCollisionCooldownTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,6 +79,8 @@ export const Ball = ({
       hasBeenHitRef.current = true;
 
       // Apply velocity change
+      if (!rigidBodyRef.current) return;
+      
       const currentVelocity = rigidBodyRef.current.linvel();
       const newVelocity = new Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z);
 

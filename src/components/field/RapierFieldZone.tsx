@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { RigidBody, CuboidCollider, CollisionEnterPayload } from '@react-three/rapier';
+import { RigidBody, CuboidCollider, CollisionEnterPayload, CollisionExitPayload } from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { FieldZone as FieldZoneType } from '@/types/field/fieldZone';
@@ -73,7 +73,7 @@ export const RapierFieldZone = ({
   };
 
   // ボールがゾーンから出た時の処理
-  const handleCollisionExit = (payload: CollisionEnterPayload) => {
+  const handleCollisionExit = (payload: CollisionExitPayload) => {
     const otherBody = payload.other.rigidBodyObject;
     
     if (otherBody?.name === 'ball') {
