@@ -1,31 +1,42 @@
 'use client';
 
-import { useState, useEffect, forwardRef } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useCallback, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Euler } from 'three';
-import { Bat, BatProps } from '@/components/common/3DComponent/Bat';
+import { Vector3, Euler, Quaternion } from 'three';
+import { RigidBody, MeshCollider, RapierRigidBody } from '@react-three/rapier';
+import { Bat, BatProps } from './Bat';
 
 // BatControllerが受け取るPropsの型を定義
-interface BatControllerProps extends Omit<BatProps, 'rotation'> { // rotationは内部で管理
-  startRotation: Euler; // 開始角度
-  endRotation: Euler;   // 終了角度
+interface BatControllerProps extends Omit<BatProps, 'rotation'> {
+  startRotation: Euler;
+  endRotation: Euler;
 }
 
-export const BatController = forwardRef<unknown, BatControllerProps>((props, ref) => {
-  const { startRotation, endRotation } = props; // propsから取得
-  const [rotation, setRotation] = useState(startRotation); // 初期状態は開始角度
+export interface BatControllerRef {
+  isSwinging: () => boolean;
+  triggerSwing: () => void;
+}
 
+export const BatController = forwardRef<BatControllerRef, BatControllerProps>((props, ref) => {
+  const { startRotation, endRotation, position = new Vector3(0, 0, 0), scale } = props;
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingProgress, setSwingProgress] = useState(0);
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
 
-  const swingSpeed = 0.1; // スイングの速さ
+  const swingSpeed = 0.08;
 
-  const triggerSwing = () => {
+  // refで外部からアクセス可能なメソッドを定義
+  useImperativeHandle(ref, () => ({
+    isSwinging: () => isSwinging,
+    triggerSwing,
+  }));
+
+  const triggerSwing = useCallback(() => {
     if (!isSwinging) {
       setSwingProgress(0);
       setIsSwinging(true);
     }
-  };
+  }, [isSwinging]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -37,10 +48,17 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSwinging]);
+  }, [triggerSwing]);
 
-  // useFrame内でアニメーションを更新
   useFrame(() => {
+    if (!rigidBodyRef.current) return;
+
+    // 毎フレーム、親から渡された位置情報を物理ボディに適用
+    rigidBodyRef.current.setNextKinematicTranslation(position);
+
+    const startQuat = new Quaternion().setFromEuler(startRotation);
+    const endQuat = new Quaternion().setFromEuler(endRotation);
+
     if (isSwinging) {
       let newProgress = swingProgress + swingSpeed;
       if (newProgress >= 1) {
@@ -49,25 +67,40 @@ export const BatController = forwardRef<unknown, BatControllerProps>((props, ref
       }
       setSwingProgress(newProgress);
 
-      // startRotationからendRotationへ線形補間
-      const interpolatedRotation = new Euler(
-        startRotation.x + (endRotation.x - startRotation.x) * newProgress,
-        startRotation.y + (endRotation.y - startRotation.y) * newProgress,
-        startRotation.z + (endRotation.z - startRotation.z) * newProgress
-      );
-      setRotation(interpolatedRotation);
+      const interpolatedQuaternion = new Quaternion().copy(startQuat).slerp(endQuat, newProgress);
+      rigidBodyRef.current.setNextKinematicRotation(interpolatedQuaternion);
 
       if (newProgress >= 1) {
         setTimeout(() => {
-          setRotation(startRotation); // 開始角度に戻す
+          if (rigidBodyRef.current) {
+            rigidBodyRef.current.setNextKinematicRotation(startQuat);
+          }
           setSwingProgress(0);
         }, 150);
       }
+    } else {
+        // スイング中でないときは、常に開始時の角度に設定
+        rigidBodyRef.current.setNextKinematicRotation(startQuat);
     }
   });
 
-  return <Bat {...props} rotation={rotation} />;
+  return (
+    <RigidBody
+      ref={rigidBodyRef}
+      type="kinematicPosition"
+      colliders={false} // カスタムのColliderを使うため、デフォルトは無効化
+      name="bat" // デバッグや衝突イベントで識別しやすくするために名前をつける
+    >
+      <MeshCollider type="hull">
+        <Bat 
+          {...props} 
+          rotation={new Euler(0, 0, 0)} // 回転はRigidBodyで制御するのでリセット
+          position={new Vector3(0, 1.3, 0)}
+        scale={scale} // scaleを明示的に渡す
+        />
+      </MeshCollider>
+    </RigidBody>
+  );
 });
 
-// displayNameを設定してデバッグしやすくする
 BatController.displayName = 'BatController';

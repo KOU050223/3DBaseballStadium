@@ -9,19 +9,17 @@ interface UseFBXLoaderProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   onLoad?: () => void;
-  onError?: (error: Error) => void;
 }
 
-export const useFBXLoader = ({ 
-  modelPath, 
+export const useFBXLoader = ({
+  modelPath,
   scale = [1, 1, 1],
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  onLoad, 
-  onError 
+  onLoad
 }: UseFBXLoaderProps) => {
   const fbx = useFBX(modelPath);
-  
+
   useEffect(() => {
     if (fbx) {
       // 基本的なトランスフォーム設定
